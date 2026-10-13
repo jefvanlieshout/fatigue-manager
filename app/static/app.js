@@ -92,6 +92,8 @@ document.addEventListener("DOMContentLoaded", function () {
       timeInput.value = start;
       endInput.value = end || toTime(toMinutes(start) + 30);
       nameInput.value = "";
+      const priorActivity = document.getElementById("quick-recent-activity");
+      if (priorActivity) priorActivity.value = "";
       estimateInput.value = "";
       beforeInput.value = "";
       afterInput.value = "";
@@ -102,61 +104,143 @@ document.addEventListener("DOMContentLoaded", function () {
       dialog.showModal();
       nameInput.focus();
     }
-    // Mouse/pen: drag across adjacent slots in the same column.
-    // Touch: native swipe scrolling is preserved; tap once and set the end time.
+    // Select a range by POSITION, not pointerenter: browsers otherwise start
+    // dragging the anchor element and stop emitting events on successive links.
+    // Touch remains native scrolling; users can tap and edit start/end manually.
+    const scrollPane = document.getElementById("calendar-scroll");
+    const tbody = scrollPane ? scrollPane.querySelector(".calendar-table tbody") : null;
     let drag = null;
-    let suppressClick = false;
+    let mousePosition = null;
+    let autoScrollFrame = null;
+    let suppressClickUntil = 0;
+
+    const recentSelect = document.getElementById("quick-recent-activity");
+    if (recentSelect) {
+      recentSelect.addEventListener("change", function () {
+        if (recentSelect.value) nameInput.value = recentSelect.value;
+        nameInput.focus();
+      });
+    }
     function clearHighlight() {
       slots.forEach(slot => slot.classList.remove("slot-selected"));
     }
-    function updateHighlight() {
-      clearHighlight();
+    function highlightRange() {
       if (!drag) return;
-      const lo = Math.min(drag.start, drag.last);
-      const hi = Math.max(drag.start, drag.last);
-      slots.forEach(function (slot) {
-        const minute = toMinutes(slot.dataset.time);
-        if (slot.dataset.day === drag.day && minute >= lo && minute <= hi) {
-          slot.classList.add("slot-selected");
-        }
-      });
+      const first = Math.min(drag.startIndex, drag.lastIndex);
+      const last = Math.max(drag.startIndex, drag.lastIndex);
+      for (const slot of slots) {
+        const row = slot.closest("tr");
+        slot.classList.toggle("slot-selected",
+          slot.dataset.day === drag.day && row &&
+          row.sectionRowIndex >= first && row.sectionRowIndex <= last);
+      }
+    }
+    function hoverAt(x, y) {
+      if (!drag || !tbody || !tbody.rows.length) return;
+      const columnCell = tbody.rows[0].cells[drag.column];
+      if (!columnCell) return;
+      const colRect = columnCell.getBoundingClientRect();
+      // Never change the selected day while dragging.
+      if (x < colRect.left || x >= colRect.right) return;
+      const bounds = tbody.getBoundingClientRect();
+      const rowHeight = tbody.rows[0].getBoundingClientRect().height;
+      if (!rowHeight) return;
+      const rowIndex = Math.max(0, Math.min(tbody.rows.length - 1,
+        Math.floor((y - bounds.top) / rowHeight)));
+      if (rowIndex !== drag.lastIndex) {
+        drag.lastIndex = rowIndex;
+        highlightRange();
+      }
+    }
+    function stopAutoScroll() {
+      if (autoScrollFrame !== null) cancelAnimationFrame(autoScrollFrame);
+      autoScrollFrame = null;
+    }
+    function autoScroll() {
+      if (!drag || !scrollPane || !mousePosition) {
+        autoScrollFrame = null;
+        return;
+      }
+      const rect = scrollPane.getBoundingClientRect();
+      const margin = 50;
+      if (mousePosition.y >= rect.top && mousePosition.y < rect.top + margin) {
+        scrollPane.scrollTop -= 11;
+      } else if (mousePosition.y < rect.bottom && mousePosition.y > rect.bottom - margin) {
+        scrollPane.scrollTop += 11;
+      }
+      hoverAt(mousePosition.x, mousePosition.y);
+      autoScrollFrame = requestAnimationFrame(autoScroll);
+    }
+    function finishDrag(event) {
+      if (!drag || (event && event.pointerId !== drag.pointerId)) return;
+      if (event) hoverAt(event.clientX, event.clientY);
+      const current = drag;
+      drag = null;
+      mousePosition = null;
+      stopAutoScroll();
+      clearHighlight();
+      if (scrollPane) scrollPane.classList.remove("calendar-selecting");
+      // Complete a single click or a multi-slot drag on release.
+      // Ignore the synthetic link click that might follow this pointerup.
+      suppressClickUntil = Date.now() + 400;
+      const begin = Math.min(current.startIndex, current.lastIndex);
+      const finish = Math.max(current.startIndex, current.lastIndex);
+      const start = slotsForDay(current.day)[begin];
+      const last = slotsForDay(current.day)[finish];
+      if (start && last) {
+        openPlan(current.day, start.dataset.time,
+          toTime(toMinutes(last.dataset.time) + 30));
+      }
+    }
+    function slotsForDay(day) {
+      return slots.filter(slot => slot.dataset.day === day);
     }
     slots.forEach(function (link) {
+      // Disable the browser's native drag-and-drop of <a href="...">.
+      link.draggable = false;
+      link.addEventListener("dragstart", event => event.preventDefault());
       link.addEventListener("pointerdown", function (event) {
         if (event.pointerType === "touch" || event.button !== 0) return;
-        drag = { day: link.dataset.day, start: toMinutes(link.dataset.time),
-                 last: toMinutes(link.dataset.time), moved: false };
-        updateHighlight();
-      });
-      link.addEventListener("pointerenter", function () {
-        if (!drag || drag.day !== link.dataset.day) return;
-        const last = toMinutes(link.dataset.time);
-        if (last !== drag.start) drag.moved = true;
-        drag.last = last;
-        updateHighlight();
+        event.preventDefault(); // prevents native text selection / anchor dragging
+        const row = link.closest("tr");
+        const cell = link.closest("td.calendar-cell");
+        drag = {
+          pointerId: event.pointerId, day: link.dataset.day,
+          column: cell.cellIndex, startIndex: row.sectionRowIndex,
+          lastIndex: row.sectionRowIndex
+        };
+        mousePosition = { x: event.clientX, y: event.clientY };
+        if (scrollPane) scrollPane.classList.add("calendar-selecting");
+        try { link.setPointerCapture(event.pointerId); } catch (_) { /* optional */ }
+        highlightRange();
+        if (autoScrollFrame === null) autoScrollFrame = requestAnimationFrame(autoScroll);
       });
       link.addEventListener("click", function (event) {
         event.preventDefault();
-        if (suppressClick) return;
+        if (Date.now() < suppressClickUntil) return;
+        // Keyboard and touch both still support quick-add.
         openPlan(link.dataset.day, link.dataset.time);
       });
     });
-    document.addEventListener("pointerup", function () {
-      if (!drag) return;
-      const selected = drag;
-      drag = null;
-      clearHighlight();
-      if (selected.moved) {
-        const start = Math.min(selected.start, selected.last);
-        const end = Math.max(selected.start, selected.last) + 30;
-        suppressClick = true;
-        openPlan(selected.day, toTime(start), toTime(end));
-        setTimeout(function () { suppressClick = false; }, 0);
-      }
+    document.addEventListener("pointermove", function (event) {
+      if (!drag || event.pointerId !== drag.pointerId) return;
+      mousePosition = { x: event.clientX, y: event.clientY };
+      hoverAt(event.clientX, event.clientY);
     });
+    document.addEventListener("pointerup", finishDrag);
     document.addEventListener("pointercancel", function () {
       drag = null;
+      mousePosition = null;
+      stopAutoScroll();
       clearHighlight();
+      if (scrollPane) scrollPane.classList.remove("calendar-selecting");
+    });
+    window.addEventListener("blur", function () {
+      drag = null;
+      mousePosition = null;
+      stopAutoScroll();
+      clearHighlight();
+      if (scrollPane) scrollPane.classList.remove("calendar-selecting");
     });
     dialog.querySelector("[data-close-plan]").addEventListener("click", function () {
       dialog.close();

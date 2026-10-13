@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.2.3 — 2026-10-13
+
+- Fix click-and-hold calendar range selection using pointer movement and grid coordinates rather than unreliable link hover events; support auto-scrolling for long ranges.
+- Prevent browser-native link dragging; maintain touch scrolling, keyboard selection, and timed form fallback.
+- Offer previously recorded Add Activity names through both a datalist and an explicit recent-activity dropdown in week planner.
+- Show 100 as the adjustable default starting energy for every day/week without fabricating stored energy readings. Recorded values always win.
+- English/Dutch UI updates, tests, README and handover. SQLite stays at v3; no GitHub Actions.
+
+
 ## v0.2.2 — 2026-10-13
 
 - Drag-select multiple contiguous half-hour slots on desktop, or choose a start and end time in the phone-friendly form.

@@ -9,7 +9,7 @@ from fastapi.responses import RedirectResponse
 
 from .main import (
     TZ, activity_rows, check_csrf, connect, date_bounds, local_time, parse_entry,
-    parsed_day, require_login, templates, csrf,
+    parsed_day, require_login, templates, csrf, suggestions,
 )
 
 router = APIRouter(prefix="/planner")
@@ -296,6 +296,7 @@ def week_page(request: Request, week: str | None = None):
         context={
             "csrf": csrf(request), "monday": monday.isoformat(), "days": days,
             "slots": slots,
+            "suggestions": suggestions(),
             "previous_week": (monday - timedelta(days=7)).isoformat(),
             "next_week": (monday + timedelta(days=7)).isoformat(),
         },

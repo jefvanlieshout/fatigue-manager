@@ -2,7 +2,7 @@
 
 A small, private, mobile-first activity and energy diary (English by default, with Dutch selectable). Designed for people who want to learn what uses or restores their energy, without overwhelming app features.
 
-## Current release: v0.2.2 (multi-slot activities and actual energy readings)
+## Current release: v0.2.3 (calendar drag selection, activity suggestions, energy defaults)
 
 - Activity name, starting energy (0–100), ending energy (0–100).
 - Immediate energy-change feedback.
@@ -11,11 +11,13 @@ A small, private, mobile-first activity and energy diary (English by default, wi
 - CSV export; local SQLite database; one password login.
 - Week calendar with all seven days across the top and all 24 hours along the left, using 30-minute time slots.
 - Click a slot to open a small form with the chosen date and time filled in; choose an end time to make a longer activity.
-- On desktop, drag across adjacent half-hour slots within the same day to select a longer period; on mobile tap the start time and enter the end time.
+- On desktop, **click and hold a free time slot, drag downward or upward over multiple half-hours, then release**. The start and end fields are populated automatically. Native browser link-dragging is suppressed and the timetable can auto-scroll when selecting a long range.
+- On mobile, tap a starting time slot and choose the ending time in the form; touch scrolling remains uninterrupted.
+- While planning, select a previously entered activity from the **Recent activities** dropdown or type a new name. This list comes from the existing Add Activity diary.
 - Choose **Plan for later** (optional estimate) or **Already completed** (actual before/after energy values). Completed activities go directly into the same diary as the original tracker.
 - Plans and recorded activities appear at their selected or actual times; untimed plans remain visible.
 - On phones, scroll horizontally to see every day and vertically to see all hours.
-- Daily starting-energy inputs (0–100) remain in the week header, with blank meaning unknown.
+- Each day starts with **100/100 visibly prefilled** in the week and day forms until someone confirms their starting-energy reading. An unconfirmed default is NOT automatically saved to the database. Saving a chosen value (including 100) records that day's real reading.
 - Plan activities with an optional time and estimated energy change, edit/remove plans, and mark them complete with actual readings.
 - Day view: reported energy timeline without guessing missing values.
 - Insights: case-insensitive activity grouping; median, min/max and sample count.
@@ -88,3 +90,9 @@ Click/tap a time cell (or drag over a contiguous block using a mouse). The quick
 Durations must have an end time after the start time, **within the same day** for now. Scheduled estimates never overwrite actual diary readings. If JS is unavailable, click a slot to use the day planning form with time preselected. The original activity tracker stays lightweight; its optional timing section now also accepts an actual end time.
 
 Before deploying v0.2.2, copy a SQLite backup outside the LXC. The update script creates another backup and runs the automatic schema v2→v3 migration on service startup. After updating, check the calendar, add/edit a long activity, and run local pytest. Existing recordings and plans are preserved.
+
+### v0.2.3 UI behavior
+
+The 100-point default is only a starting value for convenience, never an assertion that a person is fully rested. A previously recorded 0–100 reading overrides it on that date. New weeks show the same 100-point initial value for all seven days. The application does not use a weekly energy bank or infer how someone should feel.
+
+If mouse selection doesn't work after updating, hard-refresh the browser (Ctrl+Shift+R) to load the new JavaScript. Browser-specific drag behavior still needs a real-device test. The update is a frontend and query-only change; SQLite schema stays at v3.

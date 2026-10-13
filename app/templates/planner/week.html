@@ -35,11 +35,12 @@
             <div class="calendar-energy-controls">
               <input id="energy-{{ d.date }}" type="number" name="starting_energy"
                 min="0" max="100" step="1" inputmode="numeric" placeholder="—"
-                value="{{ d.energy if d.energy is not none else '' }}"
+                value="{{ d.energy if d.energy is not none else 100 }}"
                 aria-label="{{ t('starting_energy') }} {{ d.date }}">
               <span aria-hidden="true">/100</span>
               <button type="submit" class="small-save">{{ t('save') }}</button>
             </div>
+            {% if d.energy is none %}<span class="default-energy-hint">{{ t('energy_default_unconfirmed') }}</span>{% endif %}
           </form>
           {% if d.untimed %}
           <div class="calendar-untimed">
@@ -95,7 +96,18 @@
     <div class="field">
       <label for="quick-plan-name">{{ t('activity_name') }}</label>
       <input id="quick-plan-name" name="activity_name" type="text" maxlength="120"
-        placeholder="{{ t('activity_placeholder') }}" required>
+        placeholder="{{ t('activity_placeholder') }}" list="quick-activity-suggestions"
+        autocomplete="off" required>
+      <datalist id="quick-activity-suggestions">
+        {% for name in suggestions %}<option value="{{ name }}"></option>{% endfor %}
+      </datalist>
+      {% if suggestions %}
+      <label for="quick-recent-activity" class="recent-activity-label">{{ t('recent_activities') }}</label>
+      <select id="quick-recent-activity">
+        <option value="">{{ t('choose_previous_activity') }}</option>
+        {% for name in suggestions %}<option value="{{ name }}">{{ name }}</option>{% endfor %}
+      </select>
+      {% endif %}
     </div>
     <div class="form-pair">
       <div class="field">
@@ -109,7 +121,7 @@
     </div>
     <div class="field">
       <label for="quick-plan-end">{{ t('end_time') }}</label>
-      <input id="quick-plan-end" name="end_time" type="time" step="300" required>
+      <input id="quick-plan-end" name="end_time" type="time" step="60" required>
       <p class="muted-small">{{ t('duration_hint') }}</p>
     </div>
     <div class="field">

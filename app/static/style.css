@@ -242,3 +242,13 @@ footer { text-align: center; color: var(--muted); font-size: .78rem; padding: 14
 .calendar-dialog #quick-estimate-section[hidden]{display:none}
 .calendar-dialog .form-pair{grid-template-columns:repeat(2,minmax(0,1fr))}
 @media(max-width:420px){.calendar-dialog{padding:15px}}
+
+/* v0.2.3 — mouse range selection, previously-used activities and clear defaults */
+.calendar-slot-add{cursor:crosshair;-webkit-user-drag:none;user-select:none}
+.calendar-slot-add.slot-selected{background:#b8ddc4;color:#165235;box-shadow:inset 0 0 0 2px #478b64}
+.calendar-scroll.calendar-selecting,.calendar-scroll.calendar-selecting *{
+  user-select:none;-webkit-user-select:none
+}
+.default-energy-hint{display:block;color:var(--muted);font-size:.68rem;line-height:1.3;margin-top:6px}
+.recent-activity-label{margin:12px 0 5px!important;font-size:.81rem!important;color:var(--muted);font-weight:600}
+#quick-recent-activity{width:100%;font-size:.92rem}

@@ -1,6 +1,6 @@
 # Fatigue Manager — Handover
 
-Updated: 2026-10-13 (v0.2.2 duration and direct energy input prepared). Repository: https://github.com/jefvanlieshout/fatigue-manager
+Updated: 2026-10-13 (v0.2.3 interaction fixes and daily defaults prepared). Repository: https://github.com/jefvanlieshout/fatigue-manager
 
 ## Background and core requirement
 
@@ -102,3 +102,19 @@ Implementation:
 - Limits: one-day activities only (start<end, same local date), no split across midnight yet. Planned times are not evidence of actual energy; energy remains subjective.
 - SINGLE USER still: multiple independent private accounts are a future security release. Never use shared login for separate sensitive diaries. GitHub public, no health data or secrets in it.
 - Proxmox deployment still manual: take off-LXC backup, cd /opt/fatigue-manager && bash scripts/update.sh, run python -m pytest -q in test venv, manually try planner on desktop + phone. The assistant cannot confirm actual deployment until user tests it.
+
+## v0.2.3 — Drag-select reliability, saved activity dropdown, daily 100 default (2026-10-13)
+
+User reported click-and-hold dragging over multiple slots DID NOT WORK in v0.2.2. The old implementation relied on `pointerenter` on successive anchor links; browser-native anchor dragging/text selection can interfere.
+
+Fix:
+- `app/static/app.js`: mouse/pen `pointerdown` on a blank calendar slot cancels link/text dragging, captures the pointer, and tracks `pointermove` using geometrical position within the timetable's actual day column and half-hour row. A selection highlight covers contiguous slots. On `pointerup`, the quick-add dialog opens with earliest selected start and latest selected end, whether dragging upwards or downwards. Near top/bottom, auto-scroll continues selecting longer ranges; pointer cancellation and browser blur clean up. Suppress the follow-up synthetic click to avoid opening the dialog twice.
+- Touch devices preserve native swipe scrolling; a simple tap still opens the form, with manual end-time selection. Keyboard activation of a time slot is unchanged. Native anchor dragstart is explicitly suppressed. Calendar selection CSS is more visible.
+- `app/planner.py`: week template context now includes the same `suggestions()` values derived from diary entries used by the main Add Activity screen.
+- `app/templates/planner/week.html`: activity name offers a native datalist and a visible dropdown of previously recorded activity names. Selection fills the free-text name field; brand-new activities can always be typed.
+- Daily starting energy: for every unrecorded day, both week and day forms **display 100/100 as an editable default**. Existing 0–100 recorded values remain unchanged. A short explanatory label distinguishes default/unconfirmed 100 from an actual saved morning reading; no database rows are created for the default. Saving 100 explicitly records a real value. There is no inferred weekly energy bank.
+- `app/i18n.py`: EN/NL text for the dropdown, defaults and drag instructions. `tests/test_week_interactions.py` validates the week default semantics, actual saving, suggestions and presence of drag handlers.
+- No database migration. Schema remains v3, service and Proxmox LXC unchanged, no GitHub Actions. Existing single-user restrictions still apply.
+- Browser reload/hard refresh after upgrade may be needed to avoid old cached app.js. Check actual click-hold and drag selection on desktop and tapping on phone. Run all local pytest after `bash scripts/update.sh`. Preserve an off-LXC backup before updating.
+
+This commit provides the implementation but does NOT confirm browser-interaction testing on the user's actual devices.

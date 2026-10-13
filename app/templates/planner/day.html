@@ -17,9 +17,10 @@
       <label class="sr-only" for="day-energy">{{ t('starting_energy') }}</label>
       <input type="number" name="starting_energy" id="day-energy" min="0" max="100" step="1"
              inputmode="numeric" placeholder="{{ t('not_set') }}"
-             value="{{ energy if energy is not none else '' }}">
+             value="{{ energy if energy is not none else 100 }}">
       <span>/100</span><button type="submit" class="small-save">{{ t('save') }}</button>
     </div>
+    {% if energy is none %}<p class="default-energy-hint">{{ t('energy_default_unconfirmed') }}</p>{% endif %}
   </form>
 </section>
 <section class="panel">
