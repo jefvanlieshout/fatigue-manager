@@ -23,7 +23,7 @@
       <tr>
         <th scope="col" class="calendar-corner">{{ t('calendar_time') }}</th>
         {% for d in days %}
-        <th scope="col" class="calendar-day-head">
+        <th scope="col" class="calendar-day-head" data-day="{{ d.date }}">
           <a class="calendar-day-link" href="/planner/day?day={{ d.date }}">
             <strong>{{ t('days')[d.weekday] }}</strong><span>{{ d.date[8:] }}/{{ d.date[5:7] }}</span>
           </a>
@@ -35,7 +35,7 @@
             <div class="calendar-energy-controls">
               <input id="energy-{{ d.date }}" type="number" name="starting_energy"
                 min="0" max="100" step="1" inputmode="numeric" placeholder="—"
-                value="{{ d.energy if d.energy is not none else 100 }}"
+                value="{{ d.energy if d.energy is not none else 0 }}"
                 aria-label="{{ t('starting_energy') }} {{ d.date }}">
               <span aria-hidden="true">/100</span>
               <button type="submit" class="small-save">{{ t('save') }}</button>
@@ -59,7 +59,7 @@
       <tr class="{{ 'calendar-whole-hour' if slot[3:] == '00' else 'calendar-half-hour' }}" {% if slot == '07:00' %}data-initial-scroll="true"{% endif %}>
         <th scope="row" class="calendar-hour">{{ slot }}</th>
         {% for d in days %}
-        <td class="calendar-cell">
+        <td class="calendar-cell" data-day="{{ d.date }}" data-time="{{ slot }}">
           <a href="/planner/day?day={{ d.date }}&amp;time={{ slot }}"
             class="calendar-slot-add"
             data-day="{{ d.date }}" data-time="{{ slot }}"
@@ -70,9 +70,16 @@
           {% for event in d.slots[slot] %}
           <a class="calendar-event {{ 'event-completed' if event.kind == 'recorded' else 'event-planned' }}"
             data-span="{{ event.span_slots }}" data-lane="{{ event.lane }}" data-columns="{{ event.columns }}"
-            href="{{ '/entries/' ~ event.id ~ '/edit' if event.kind == 'recorded' else '/planner/day?day=' ~ d.date ~ '&edit_plan=' ~ event.id }}"
-            title="{{ event.name }} · {{ event.time }}{{ '–' ~ event.end_time if event.end_time else '' }}">
-            <span class="calendar-event-title">{{ event.name }}</span>
+            data-event-kind="{{ 'recorded' if event.kind == 'recorded' else 'recurring' if event.recurring else 'planned' }}"
+            data-event-id="{{ event.id }}" data-event-day="{{ d.date }}"
+            data-event-name="{{ event.name }}" data-event-start="{{ event.time }}"
+            data-event-end="{{ event.end_time or '' }}"
+            data-event-before="{{ event.before if event.before is defined else '' }}"
+            data-event-after="{{ event.after if event.after is defined else '' }}"
+            data-event-estimate="{{ event.explicit_delta if event.kind == 'planned' and event.explicit_delta is not none else '' }}"
+            href="{{ '/entries/' ~ event.id ~ '/edit' if event.kind == 'recorded' else '/planner/day?day=' ~ d.date ~ '&edit_recurring=' ~ event.id if event.recurring else '/planner/day?day=' ~ d.date ~ '&edit_plan=' ~ event.id }}"
+            title="{{ t('edit') }}: {{ event.name }} · {{ event.time }}{{ '–' ~ event.end_time if event.end_time else '' }}">
+            <span class="calendar-event-title">{{ event.name }} <span class="calendar-event-edit" aria-hidden="true">✎</span></span>
             <small>{{ event.time }}{% if event.end_time %}–{{ event.end_time }}{% endif %}{% if event.delta is not none %} · {{ '+' if event.delta > 0 else '' }}{{ event.delta }}{% endif %}</small>
           </a>
           {% endfor %}
@@ -91,7 +98,13 @@
     <button type="button" class="calendar-close" data-close-plan aria-label="{{ t('cancel') }}">×</button>
   </div>
   <p class="subtle">{{ t('plan_form_intro') }}</p>
-  <form action="/planner/create" method="post" class="entry-form" id="quick-plan-form">
+  <form action="/planner/calendar-event" method="post" class="entry-form" id="quick-plan-form"
+    data-confirm-series-en="{{ t('confirm_delete_series') if lang == 'en' else 'Delete this entire repeating schedule? Completed diary entries remain.' }}"
+    data-confirm-series-nl="{{ t('confirm_delete_series') if lang == 'nl' else 'De hele reeks verwijderen? Voltooide dagboekactiviteiten blijven bestaan.' }}"
+    data-confirm-delete-en="Delete this activity?"
+    data-confirm-delete-nl="Deze activiteit verwijderen?">
+    <input type="hidden" name="event_kind" id="quick-event-kind" value="new">
+    <input type="hidden" name="event_id" id="quick-event-id" value="0">
     <input type="hidden" name="token" value="{{ csrf }}">
     <div class="field">
       <label for="quick-plan-name">{{ t('activity_name') }}</label>
@@ -144,6 +157,30 @@
         </div>
       </div>
     </div>
+    <details class="optional" id="quick-repeat-section">
+      <summary>{{ t('repeat_options') }}</summary>
+      <div class="field">
+        <label for="quick-repeat">{{ t('repeat_frequency') }}</label>
+        <select name="repeat" id="quick-repeat">
+          <option value="none">{{ t('repeat_none') }}</option>
+          <option value="daily">{{ t('repeat_daily') }}</option>
+          <option value="weekdays">{{ t('repeat_weekdays') }}</option>
+          <option value="weekly">{{ t('repeat_weekly') }}</option>
+          <option value="custom">{{ t('repeat_custom') }}</option>
+        </select>
+      </div>
+      <fieldset id="quick-repeat-days" class="recurrence-weekdays" hidden>
+        <legend>{{ t('repeat_on_days') }}</legend>
+        {% for weekday in range(7) %}
+          <label><input type="checkbox" name="repeat_days" value="{{ weekday }}">{{ t('days')[weekday][:3] }}</label>
+        {% endfor %}
+      </fieldset>
+      <div class="field">
+        <label for="quick-repeat-until">{{ t('repeat_until') }}</label>
+        <input id="quick-repeat-until" name="repeat_until" type="date">
+        <p class="muted-small">{{ t('repeat_until_hint') }}</p>
+      </div>
+    </details>
     <details class="optional" id="quick-estimate-section">
       <summary>{{ t('estimate_optional') }}</summary>
       <div class="field">
@@ -153,9 +190,16 @@
         <p class="muted-small">{{ t('estimated_hint') }}</p>
       </div>
     </details>
-    <button type="submit" class="primary" id="quick-submit"
+    <button type="submit" name="operation" value="save" class="primary" id="quick-submit"
       data-plan-label="{{ t('plan_save') }}"
-      data-complete-label="{{ t('save_activity') }}">{{ t('plan_save') }}</button>
+      data-edit-label="{{ t('save_changes') }}"
+      data-complete-label="{{ t('save_activity') }}"
+      data-new-title="{{ t('add_plan') }}"
+      data-edit-title="{{ t('edit_calendar_event') }}">{{ t('plan_save') }}</button>
+    <div class="calendar-manage-actions" id="quick-manage-actions" hidden>
+      <button type="submit" name="operation" value="delete_one" class="calendar-danger" id="quick-delete-one" formnovalidate>{{ t('delete') }}</button>
+      <button type="submit" name="operation" value="delete_series" class="calendar-danger" id="quick-delete-series" formnovalidate hidden>{{ t('delete_entire_series') }}</button>
+    </div>
   </form>
 </dialog>
 {% endblock %}

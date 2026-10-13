@@ -1,6 +1,6 @@
 # Fatigue Manager — Handover
 
-Updated: 2026-10-13 (v0.2.3 interaction fixes and daily defaults prepared). Repository: https://github.com/jefvanlieshout/fatigue-manager
+Updated: 2026-10-13 — v0.2.4 mobile and recurring activities. Repository: https://github.com/jefvanlieshout/fatigue-manager
 
 ## Background and core requirement
 
@@ -118,3 +118,26 @@ Fix:
 - Browser reload/hard refresh after upgrade may be needed to avoid old cached app.js. Check actual click-hold and drag selection on desktop and tapping on phone. Run all local pytest after `bash scripts/update.sh`. Preserve an off-LXC backup before updating.
 
 This commit provides the implementation but does NOT confirm browser-interaction testing on the user's actual devices.
+
+## v0.2.4 — Mobile-first weekly calendar + live now indicator + recurring tasks
+
+User feedback:
+- Too much explanatory text and header clutter on phones above the timetable.
+- Editing/deleting activities from the weekly calendar previously required too many steps.
+- A red line should follow the current time down the current day column.
+- Change the unrecorded daily starting-energy default from 100 to 0.
+- Add recurring activities.
+
+Implementation:
+- Mobile CSS scoped to .shell.wide trims explanatory text, compacts header/navigation, expands the scrollable calendar to nearly full available viewport height, and retains horizontal week scrolling.
+- Clicking an existing scheduled or completed calendar block opens the same lightweight modal already used for new activities, populated with current values. Edit or delete directly; recorded values remain actual (not plans). For a recurring occurrence, edit just that day, skip only that occurrence, or delete the complete series.
+- Client-only Europe/Brussels red current-time bar sits within today's half-hour slot and moves every 15 seconds with CSS transitions; today's header receives a subtle highlight. No such marker when viewing another week. Auto-focus today's day/time on small screens unless a saved scroll position exists.
+- Day and week starting-energy inputs show an editable 0 when not yet recorded; **no database record is inserted until Save is used**. Existing real daily values (including 0 and 100) are preserved.
+- Recurrences are rules rather than thousands of copied plans: daily, Mon-Fri, weekly based on starting weekday, or selected weekdays, optionally limited by until_date. Each occurrence can be modified, skipped or completed via an exception record. A completed occurrence creates a real diary entry; it disappears as a planned occurrence. Deleting a series preserves all completed history.
+- SQLite v3 -> v4 migration creates recurring_rules and recurring_exceptions tables, while preserving existing entries, day energy, plans and their timestamps. Initialization repeatable, wrapped in SQLite transactions.
+- New app/recurrence.py contains database migration, limited date-range expansion and validation. app/calendar_actions.py handles authenticated, CSRF-protected create/edit/delete/complete for one-off plans, diary entries and recurring instances. app/planner.py merges generated recurrences into calendar/day views. app/main.py allows schema v4 and reopens occurrence when its linked diary entry is deleted.
+- Updated app/templates/planner/week.html, day.html, app/static/app.js/style.css and app/i18n.py for English/Dutch.
+- New tests/test_recurring_calendar.py covers migration, repetition, single skip/edit/complete, deleting a series, editing/removing one-off and recorded items, default 0 and mobile indicator. Old tests expecting default 100 or schema v3 were updated.
+- No third-party calendar dependency, no telemetry, no GitHub Actions, no new LXC. Still SINGLE-USER: future multiuser account isolation remains separate and is NOT delivered by v0.2.4.
+
+Deployment: back up database to the NAS/off-container location before running existing `bash scripts/update.sh` from /opt/fatigue-manager inside the LXC. On successful restart SQLite PRAGMA user_version should equal 4. Test the full pytest suite, login and calendar on a real phone, tap-to-edit/delete, red marker, repeat patterns and skip/delete series. If rollback is needed, use a matching pre-update backup alongside prior code. Code was not run on the user's Proxmox by the assistant and local test execution there is not confirmed.

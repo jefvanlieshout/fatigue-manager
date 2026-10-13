@@ -17,7 +17,7 @@
       <label class="sr-only" for="day-energy">{{ t('starting_energy') }}</label>
       <input type="number" name="starting_energy" id="day-energy" min="0" max="100" step="1"
              inputmode="numeric" placeholder="{{ t('not_set') }}"
-             value="{{ energy if energy is not none else 100 }}">
+             value="{{ energy if energy is not none else 0 }}">
       <span>/100</span><button type="submit" class="small-save">{{ t('save') }}</button>
     </div>
     {% if energy is none %}<p class="default-energy-hint">{{ t('energy_default_unconfirmed') }}</p>{% endif %}
@@ -28,11 +28,18 @@
     {% if editing %}<a href="/planner/day?day={{ day }}" class="quiet-link">{{ t('cancel') }}</a>{% endif %}
   </div>
   <p class="subtle">{{ t('plan_form_intro') }}</p>
-  <form method="post" class="entry-form" action="{{ '/planner/plans/' ~ editing.id ~ '/edit' if editing else '/planner/plans' }}">
+  <form method="post" class="entry-form" action="{{ '/planner/calendar-event' if editing and editing.recurring else '/planner/plans/' ~ editing.id ~ '/edit' if editing else '/planner/plans' }}">
     <input type="hidden" name="token" value="{{ csrf }}">
+    {% if editing and editing.recurring %}
+      <input type="hidden" name="event_kind" value="recurring">
+      <input type="hidden" name="event_id" value="{{ editing.id }}">
+      <input type="hidden" name="mode" value="planned">
+      <input type="hidden" name="operation" value="save">
+    {% endif %}
     <div class="field">
       <label for="plan-date">{{ t('date') }}</label>
-      <input id="plan-date" type="date" name="day" value="{{ editing.scheduled_day if editing else day }}" required>
+      <input id="plan-date" type="date" name="day" value="{{ editing.scheduled_day if editing else day }}" required
+        {% if editing and editing.recurring %}readonly{% endif %}>
     </div>
     <div class="field">
       <label for="plan-name">{{ t('activity_name') }}</label>
@@ -80,8 +87,18 @@
       <details class="optional">
         <summary>{{ t('complete') }}</summary>
         <p class="subtle">{{ t('complete_hint') }}</p>
-        <form action="/planner/plans/{{ plan.id }}/complete" method="post" class="completion-form">
+        <form action="{{ '/planner/calendar-event' if plan.recurring else '/planner/plans/' ~ plan.id ~ '/complete' }}" method="post" class="completion-form">
           <input type="hidden" name="token" value="{{ csrf }}">
+          {% if plan.recurring %}
+            <input type="hidden" name="event_kind" value="recurring">
+            <input type="hidden" name="event_id" value="{{ plan.id }}">
+            <input type="hidden" name="operation" value="save">
+            <input type="hidden" name="mode" value="completed">
+            <input type="hidden" name="day" value="{{ day }}">
+            <input type="hidden" name="activity_name" value="{{ plan.activity_name }}">
+            <input type="hidden" name="planned_time" value="{{ plan.scheduled_time }}">
+            <input type="hidden" name="end_time" value="{{ plan.end_time or '' }}">
+          {% endif %}
           <div class="form-pair">
             <div class="field">
               <label for="before-{{ plan.id }}">{{ t('before') }}</label>
@@ -99,12 +116,31 @@
           <button type="submit" class="small-save">{{ t('complete') }}</button>
         </form>
       </details>
-      <a class="quiet-link" href="/planner/day?day={{ day }}&amp;edit_plan={{ plan.id }}">{{ t('edit') }}</a>
+      <a class="quiet-link" href="/planner/day?day={{ day }}&amp;{{ 'edit_recurring' if plan.recurring else 'edit_plan' }}={{ plan.id }}">{{ t('edit') }}</a>
     {% endif %}
+    {% if plan.recurring %}
+    <form class="delete-plan" action="/planner/calendar-event" method="post"
+      data-confirm="{{ t('confirm_delete_plan') }}">
+      <input type="hidden" name="token" value="{{ csrf }}">
+      <input type="hidden" name="event_kind" value="recurring">
+      <input type="hidden" name="event_id" value="{{ plan.id }}">
+      <input type="hidden" name="day" value="{{ day }}">
+      <button type="submit" name="operation" value="delete_one" class="button-link danger-link">{{ t('skip_once') }}</button>
+    </form>
+    <form class="delete-plan" action="/planner/calendar-event" method="post"
+      data-confirm="{{ t('confirm_delete_series') }}">
+      <input type="hidden" name="token" value="{{ csrf }}">
+      <input type="hidden" name="event_kind" value="recurring">
+      <input type="hidden" name="event_id" value="{{ plan.id }}">
+      <input type="hidden" name="day" value="{{ day }}">
+      <button type="submit" name="operation" value="delete_series" class="button-link danger-link">{{ t('delete_entire_series') }}</button>
+    </form>
+    {% else %}
     <form class="delete-plan" action="/planner/plans/{{ plan.id }}/delete" method="post" data-confirm="{{ t('confirm_delete_plan') }}">
       <input type="hidden" name="token" value="{{ csrf }}">
       <button type="submit" class="button-link danger-link">{{ t('delete_plan') }}</button>
     </form>
+    {% endif %}
   </article>
   {% endfor %}
   {% else %}

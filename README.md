@@ -2,7 +2,7 @@
 
 A small, private, mobile-first activity and energy diary (English by default, with Dutch selectable). Designed for people who want to learn what uses or restores their energy, without overwhelming app features.
 
-## Current release: v0.2.3 (calendar drag selection, activity suggestions, energy defaults)
+## Current release: v0.2.4 (mobile calendar, quick editing and repeating activities)
 
 - Activity name, starting energy (0–100), ending energy (0–100).
 - Immediate energy-change feedback.
@@ -17,7 +17,7 @@ A small, private, mobile-first activity and energy diary (English by default, wi
 - Choose **Plan for later** (optional estimate) or **Already completed** (actual before/after energy values). Completed activities go directly into the same diary as the original tracker.
 - Plans and recorded activities appear at their selected or actual times; untimed plans remain visible.
 - On phones, scroll horizontally to see every day and vertically to see all hours.
-- Each day starts with **100/100 visibly prefilled** in the week and day forms until someone confirms their starting-energy reading. An unconfirmed default is NOT automatically saved to the database. Saving a chosen value (including 100) records that day's real reading.
+- Each day starts with **0/100 visibly prefilled** in the week and day forms until someone confirms their starting-energy reading. An unconfirmed default is NOT automatically saved to the database. Saving a chosen value (including 0) records that day's real reading.
 - Plan activities with an optional time and estimated energy change, edit/remove plans, and mark them complete with actual readings.
 - Day view: reported energy timeline without guessing missing values.
 - Insights: case-insensitive activity grouping; median, min/max and sample count.
@@ -93,6 +93,34 @@ Before deploying v0.2.2, copy a SQLite backup outside the LXC. The update script
 
 ### v0.2.3 UI behavior
 
-The 100-point default is only a starting value for convenience, never an assertion that a person is fully rested. A previously recorded 0–100 reading overrides it on that date. New weeks show the same 100-point initial value for all seven days. The application does not use a weekly energy bank or infer how someone should feel.
+The 0-point default is only a starting value for convenience, never an assertion that a person is fully rested. A previously recorded 0–100 reading overrides it on that date. New weeks show the same 0-point initial value for all seven days. The application does not use a weekly energy bank or infer how someone should feel.
 
 If mouse selection doesn't work after updating, hard-refresh the browser (Ctrl+Shift+R) to load the new JavaScript. Browser-specific drag behavior still needs a real-device test. The update is a frontend and query-only change; SQLite schema stays at v3.
+
+## v0.2.4 — Mobile calendar and recurring activities
+
+The weekly calendar now prioritizes the timetable on narrow screens: hides long help text, reduces header/navigation spacing, keeps the whole seven-day layout scrollable, and initially focuses the current day when viewing the current week.
+
+A slim **red Now line** marks the current time in the current day column. It moves every 15 seconds using the browser's Europe/Brussels time. The line only appears when the viewed week contains today; the current day header is highlighted. No live-time tracking is uploaded to a service.
+
+Tap an existing planned or completed activity to edit it or delete it **directly in the calendar dialog**, instead of navigating away. The same dialog allows marking a scheduled activity completed, with actual before/after energy readings.
+
+### Repeating activities
+
+When creating a plan, expand **Repeat this task (optional)** and choose:
+- Every day
+- Weekdays (Monday–Friday)
+- Every week on the starting weekday
+- Custom selected weekdays
+
+An optional until-date stops the schedule; otherwise it continues. Only the requested week is generated on demand, so recurring tasks do not create an unlimited number of database rows.
+
+A repeating occurrence can be edited or skipped for **that day only**, or the entire series can be removed. Completing an occurrence creates one actual diary entry and prevents that occurrence being generated again; already recorded entries remain when the series is deleted. The recurring task UI is only available in the planner, leaving the main activity tracker simple.
+
+For convenience, every unrecorded day shows **0/100 by default** until a real morning value is saved. This does **not** write fake measurements to the database, and saved values take precedence.
+
+### Update and data safety
+
+**This release upgrades SQLite schema v3 to v4** (new recurring rule and exception tables). The existing diary and planned activity tables remain, and the app continues to use the same dedicated Proxmox LXC. Back up your database outside the LXC before updating; run `bash scripts/update.sh` as root, then run the local pytest suite and test the calendar on phone and desktop.
+
+The application still has only **one shared login**. Independent private user accounts remain a separate future milestone. No GitHub Actions, external JS framework, public user registration or external calendar service.

@@ -56,6 +56,16 @@ document.addEventListener("DOMContentLoaded", function () {
     const afterInput = document.getElementById("quick-energy-after");
     const estimateSection = document.getElementById("quick-estimate-section");
     const submitButton = document.getElementById("quick-submit");
+    const kindInput = document.getElementById("quick-event-kind");
+    const idInput = document.getElementById("quick-event-id");
+    const repeatSection = document.getElementById("quick-repeat-section");
+    const repeatInput = document.getElementById("quick-repeat");
+    const repeatDays = document.getElementById("quick-repeat-days");
+    const repeatUntil = document.getElementById("quick-repeat-until");
+    const manageActions = document.getElementById("quick-manage-actions");
+    const deleteSeriesButton = document.getElementById("quick-delete-series");
+    const dialogTitle = document.getElementById("quick-plan-title");
+    const quickForm = document.getElementById("quick-plan-form");
     const slots = Array.from(document.querySelectorAll(".calendar-slot-add"));
 
     function toMinutes(text) {
@@ -73,9 +83,20 @@ document.addEventListener("DOMContentLoaded", function () {
       beforeInput.required = completed;
       afterInput.required = completed;
       estimateSection.hidden = completed;
-      submitButton.textContent = completed ?
-        submitButton.dataset.completeLabel : submitButton.dataset.planLabel;
+      if (completed && kindInput.value === "new") {
+        repeatInput.value = "none";
+        setRepeatDays();
+      }
+      repeatSection.hidden = completed || kindInput.value !== "new";
+      modeInput.options[0].disabled = kindInput.value === "recorded";
+      submitButton.textContent = kindInput.value === "new" ?
+        (completed ? submitButton.dataset.completeLabel : submitButton.dataset.planLabel) :
+        submitButton.dataset.editLabel;
     }
+    function setRepeatDays() {
+      repeatDays.hidden = repeatInput.value !== "custom";
+    }
+    repeatInput.addEventListener("change", setRepeatDays);
     function validateTimes() {
       const invalid = endInput.value !== "" && timeInput.value !== "" &&
         toMinutes(endInput.value) <= toMinutes(timeInput.value);
@@ -91,6 +112,17 @@ document.addEventListener("DOMContentLoaded", function () {
       dayInput.value = day;
       timeInput.value = start;
       endInput.value = end || toTime(toMinutes(start) + 30);
+      kindInput.value = "new";
+      idInput.value = "0";
+      dayInput.readOnly = false;
+      dialogTitle.textContent = submitButton.dataset.newTitle;
+      repeatInput.value = "none";
+      repeatUntil.value = "";
+      repeatSection.open = false;
+      repeatSection.hidden = false;
+      repeatDays.querySelectorAll('input[type="checkbox"]').forEach(box => box.checked = false);
+      setRepeatDays();
+      manageActions.hidden = true;
       nameInput.value = "";
       const priorActivity = document.getElementById("quick-recent-activity");
       if (priorActivity) priorActivity.value = "";
@@ -104,6 +136,42 @@ document.addEventListener("DOMContentLoaded", function () {
       dialog.showModal();
       nameInput.focus();
     }
+    function editEvent(link) {
+      const data = link.dataset;
+      const when = data.eventStart || "09:00";
+      openPlan(data.eventDay, when, data.eventEnd || toTime(toMinutes(when) + 30));
+      kindInput.value = data.eventKind;
+      idInput.value = data.eventId;
+      dialogTitle.textContent = submitButton.dataset.editTitle;
+      nameInput.value = data.eventName || "";
+      const priorActivity = document.getElementById("quick-recent-activity");
+      if (priorActivity) priorActivity.value = "";
+      estimateInput.value = data.eventEstimate || "";
+      beforeInput.value = data.eventBefore || "";
+      afterInput.value = data.eventAfter || "";
+      modeInput.value = data.eventKind === "recorded" ? "completed" : "planned";
+      dayInput.readOnly = data.eventKind === "recurring";
+      manageActions.hidden = false;
+      deleteSeriesButton.hidden = data.eventKind !== "recurring";
+      setMode();
+      nameInput.focus();
+    }
+    document.querySelectorAll(".calendar-event[data-event-kind]").forEach(function(link) {
+      link.addEventListener("click", function(event) {
+        event.preventDefault();
+        editEvent(link);
+      });
+    });
+    quickForm.addEventListener("submit", function(event) {
+      const action = event.submitter && event.submitter.value;
+      if (action !== "delete_one" && action !== "delete_series") return;
+      const isSeries = action === "delete_series";
+      const nl = document.documentElement.lang === "nl";
+      const message = isSeries ?
+        (nl ? quickForm.dataset.confirmSeriesNl : quickForm.dataset.confirmSeriesEn) :
+        (nl ? quickForm.dataset.confirmDeleteNl : quickForm.dataset.confirmDeleteEn);
+      if (!window.confirm(message)) event.preventDefault();
+    });
     // Select a range by POSITION, not pointerenter: browsers otherwise start
     // dragging the anchor element and stop emitting events on successive links.
     // Touch remains native scrolling; users can tap and edit start/end manually.
@@ -251,6 +319,20 @@ document.addEventListener("DOMContentLoaded", function () {
     setMode();
   }
 
+  // This is a visual clock only; no location or activity data leaves the browser.
+  function brusselsNow() {
+    const parts = new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Europe/Brussels", year: "numeric", month: "2-digit",
+      day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit",
+      hourCycle: "h23"
+    }).formatToParts(new Date());
+    const get = type => parts.find(part => part.type === type).value;
+    return {
+      day: get("year") + "-" + get("month") + "-" + get("day"),
+      hour: Number(get("hour")), minute: Number(get("minute")),
+      second: Number(get("second"))
+    };
+  }
   // Show a useful daytime range first while keeping midnight through 23:30
   // available by scrolling upward or downward.
   const scrollPane = document.getElementById("calendar-scroll");
@@ -262,18 +344,27 @@ document.addEventListener("DOMContentLoaded", function () {
     } catch (_) {
       // The calendar works normally even when browser storage is unavailable.
     }
+    const now = brusselsNow();
+    const todayHeader = scrollPane.querySelector('.calendar-day-head[data-day="' + now.day + '"]');
     if (previousPosition && Number.isFinite(previousPosition.top) &&
         Number.isFinite(previousPosition.left)) {
       scrollPane.scrollTop = previousPosition.top;
       scrollPane.scrollLeft = previousPosition.left;
     } else {
-      const first = scrollPane.querySelector("[data-initial-scroll]");
+      const hourSlot = String(now.hour).padStart(2, "0") + ":" +
+        (now.minute < 30 ? "00" : "30");
+      const todayCell = scrollPane.querySelector(
+        '.calendar-cell[data-day="' + now.day + '"][data-time="' + hourSlot + '"]');
+      const first = todayCell || scrollPane.querySelector("[data-initial-scroll]");
       const header = scrollPane.querySelector("thead");
       if (first && header) {
         scrollPane.scrollTop = Math.max(0,
           first.getBoundingClientRect().top -
           scrollPane.getBoundingClientRect().top -
-          header.getBoundingClientRect().height - 8);
+          header.getBoundingClientRect().height - 70);
+      }
+      if (todayHeader && window.matchMedia("(max-width: 750px)").matches) {
+        scrollPane.scrollLeft = Math.max(0, todayHeader.offsetLeft - 76);
       }
     }
     scrollPane.addEventListener("scroll", function () {
@@ -285,5 +376,44 @@ document.addEventListener("DOMContentLoaded", function () {
         // Private mode or disabled storage should not interrupt planning.
       }
     }, { passive: true });
+
+    const marker = document.createElement("span");
+    marker.className = "calendar-now-marker";
+    marker.setAttribute("aria-hidden", "true");
+    marker.textContent = document.documentElement.lang === "nl" ? "Nu" : "Now";
+    let activeCell = null;
+    let activeHeader = null;
+    function moveNowLine() {
+      const current = brusselsNow();
+      const slot = String(current.hour).padStart(2, "0") + ":" +
+        (current.minute < 30 ? "00" : "30");
+      const cell = scrollPane.querySelector(
+        '.calendar-cell[data-day="' + current.day + '"][data-time="' + slot + '"]');
+      const dayHeader = scrollPane.querySelector(
+        '.calendar-day-head[data-day="' + current.day + '"]');
+      if (activeHeader !== dayHeader) {
+        if (activeHeader) activeHeader.classList.remove("calendar-today");
+        if (dayHeader) dayHeader.classList.add("calendar-today");
+        activeHeader = dayHeader;
+      }
+      if (!cell) {
+        marker.remove();
+        activeCell = null;
+        return; // The visible week doesn't include the current date.
+      }
+      if (cell !== activeCell) {
+        cell.appendChild(marker);
+        activeCell = cell;
+      }
+      const fraction = ((current.minute % 30) * 60 + current.second) / 1800;
+      const height = cell.getBoundingClientRect().height || 36;
+      marker.style.top = (fraction * height) + "px";
+    }
+    moveNowLine();
+    document.addEventListener("visibilitychange", function () {
+      if (!document.hidden) moveNowLine();
+    });
+    // Fifteen-second updates with a matching CSS transition look gradual.
+    setInterval(moveNowLine, 15000);
   }
 });

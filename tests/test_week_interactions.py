@@ -1,4 +1,4 @@
-"""Regression coverage for usable week drag targets, saved suggestions and 100-point defaults."""
+"""Regression coverage for usable week drag targets, saved suggestions and 0-point defaults."""
 import re
 from pathlib import Path
 
@@ -21,13 +21,13 @@ def _login(tmp_path):
     return client, token
 
 
-def test_week_defaults_100_without_adding_energy_measurements(tmp_path):
+def test_week_defaults_zero_without_adding_energy_measurements(tmp_path):
     client, token = _login(tmp_path)
     try:
         html = client.get("/planner/week?week=2026-10-13").text
-        assert html.count("Default 100 · not yet recorded") == 7
+        assert html.count("Default 0 · not yet recorded") == 7
         assert html.count('name="starting_energy"') == 7
-        assert html.count('value="100"') >= 7
+        assert html.count('value="0"') >= 7
         with main.connect() as db:
             assert db.execute("SELECT COUNT(*) FROM daily_energy").fetchone()[0] == 0
         response = client.post("/planner/energy", data={
@@ -43,8 +43,8 @@ def test_week_defaults_100_without_adding_energy_measurements(tmp_path):
             assert db.execute("SELECT COUNT(*) FROM daily_energy").fetchone()[0] == 1
         html = client.get("/planner/week?week=2026-10-13").text
         assert 'value="35"' in html
-        assert html.count("Default 100 · not yet recorded") == 6
-        assert 'value="100"' in client.get("/planner/day?day=2026-10-14").text
+        assert html.count("Default 0 · not yet recorded") == 6
+        assert 'value="0"' in client.get("/planner/day?day=2026-10-14").text
     finally:
         client.__exit__(None, None, None)
 
@@ -72,13 +72,13 @@ def test_both_languages_offer_default_label(tmp_path):
     try:
         english = client.get("/planner/week?week=2026-10-13").text
         assert "Previously recorded activities" not in english  # no previous entries yet
-        assert "Default 100" in english
+        assert "Default 0" in english
         res = client.post("/language", data={
             "token": token, "lang": "nl", "return_to": "/planner/week",
         }, follow_redirects=False)
         assert res.status_code == 303
         dutch = client.get("/planner/week?week=2026-10-13").text
-        assert "Standaard 100" in dutch
+        assert "Standaard 0" in dutch
     finally:
         client.__exit__(None, None, None)
 

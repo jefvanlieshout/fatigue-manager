@@ -252,3 +252,78 @@ footer { text-align: center; color: var(--muted); font-size: .78rem; padding: 14
 .default-energy-hint{display:block;color:var(--muted);font-size:.68rem;line-height:1.3;margin-top:6px}
 .recent-activity-label{margin:12px 0 5px!important;font-size:.81rem!important;color:var(--muted);font-weight:600}
 #quick-recent-activity{width:100%;font-size:.92rem}
+
+/* v0.3.0 calendar-first mobile polish and live time indicator */
+.calendar-day-head.calendar-today .calendar-day-link strong{color:#b52b34}
+.calendar-day-head.calendar-today{background:#fff6f6}
+.calendar-now-marker{
+  position:absolute;pointer-events:none;left:0;right:0;height:2px;z-index:8;
+  background:#d93442;color:#d93442;font-size:.66rem;font-weight:800;
+  transition:top 15s linear;white-space:nowrap;
+}
+.calendar-now-marker::before{
+  content:"";position:absolute;left:-4px;top:-4px;width:10px;height:10px;
+  background:#d93442;border-radius:50%
+}
+.calendar-now-marker::after{
+  content:"";position:absolute;right:0;top:-3px;width:5px;height:8px;
+  background:#d93442;border-radius:3px
+}
+.calendar-event-edit{font-size:.72rem;font-weight:400;color:var(--muted);float:right;margin-left:3px}
+.calendar-event:focus-visible{z-index:10}
+.calendar-dialog .calendar-manage-actions:not([hidden]){
+  display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:14px
+}
+.calendar-danger{
+  border:1px solid #dfaaaa;border-radius:10px;background:#fff4f4;
+  color:#a22935;cursor:pointer;font:inherit;font-size:.87rem;
+  min-height:44px;padding:8px 12px
+}
+.calendar-danger:hover{background:#ffe5e5}
+.recurrence-weekdays{display:flex;flex-wrap:wrap;gap:7px;border:0;padding:0;margin:0 0 16px}
+.recurrence-weekdays[hidden]{display:none}
+.recurrence-weekdays legend{font-size:.86rem;font-weight:700;margin-bottom:8px}
+.recurrence-weekdays label{display:flex;gap:4px;align-items:center;background:#f1f6f2;
+  border:1px solid #d3e0d7;border-radius:9px;padding:7px 8px;font-size:.8rem;cursor:pointer}
+.recurrence-weekdays input{width:15px;height:15px;accent-color:var(--green)}
+.calendar-dialog .optional[hidden]{display:none}
+.calendar-dialog #quick-repeat-section .field{margin:10px 0}
+.calendar-dialog #quick-repeat-section select{width:100%}
+@media(max-width:750px){
+  /* Planner content is the priority: no descriptive paragraph stack above it. */
+  .shell.wide{padding:0 8px}
+  .shell.wide .header{padding:4px 0;gap:3px;min-height:0}
+  .shell.wide .brand{font-size:.88rem;letter-spacing:0}
+  .shell.wide .brand-mark{width:26px;height:26px;border-radius:8px;font-size:19px}
+  .shell.wide .header-actions{width:100%;gap:5px;flex-wrap:nowrap}
+  .shell.wide .primary-nav{display:flex;gap:9px;flex:1;justify-content:space-between}
+  .shell.wide .primary-nav a{font-size:.74rem;white-space:nowrap}
+  .shell.wide .lang-form{font-size:.72rem}
+  .shell.wide .lang-form button{font-size:.72rem}
+  .shell.wide .header-actions .button-link{font-size:.7rem}
+  .shell.wide .planner-page{padding:2px 0 3px}
+  .shell.wide .planner-page .eyebrow,.shell.wide .planner-page .subtle{display:none}
+  .shell.wide .planner-page h1{font-size:1.05rem;line-height:1.15;margin:0}
+  .shell.wide .week-nav{display:flex;align-items:center;gap:6px;margin:0 0 5px}
+  .shell.wide .week-nav a{font-size:.78rem}
+  .shell.wide .calendar-legend{display:none}
+  .shell.wide .planner-note,.shell.wide footer{display:none}
+  .shell.wide .calendar-scroll{height:calc(100dvh - 149px);max-height:none;border-radius:9px}
+  .shell.wide .calendar-table{min-width:1000px}
+  .shell.wide .calendar-day-head{width:132px;min-width:132px;padding:6px 5px}
+  .shell.wide .calendar-day-link{font-size:.78rem;margin-bottom:4px}
+  .shell.wide .calendar-day-link span{font-size:.68rem}
+  .shell.wide .calendar-energy label{font-size:.66rem;margin:0 0 3px}
+  .shell.wide .calendar-energy-controls input{height:31px;width:45px}
+  .shell.wide .calendar-energy-controls .small-save{font-size:.67rem;min-height:31px;padding:3px}
+  .shell.wide .default-energy-hint{font-size:.57rem;margin:2px 0 0}
+  .shell.wide .calendar-corner,.shell.wide .calendar-hour{width:52px;min-width:52px;padding:4px 3px;font-size:.69rem}
+  .shell.wide .calendar-cell{min-width:132px}
+  .calendar-now-marker{height:2px}
+  .shell.wide .calendar-dialog{width:calc(100vw - 18px);padding:15px;max-height:88dvh}
+}
+@media(max-width:380px){
+  .shell.wide .header-actions{flex-wrap:wrap}
+  .shell.wide .primary-nav{width:100%}
+  .shell.wide .calendar-scroll{height:calc(100dvh - 168px)}
+}

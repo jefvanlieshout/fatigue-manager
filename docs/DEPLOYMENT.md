@@ -92,3 +92,22 @@ Copy a consistent backup to external NAS storage **before** updating, and do not
     sqlite3 /var/lib/fatigue-manager/fatigue.sqlite3 'PRAGMA user_version;'
 
 Expected output: `3`. Also run tests locally and verify the week view, multi-slot blocks, energy readings, editing and activity history. Do not automatically downgrade the database to a code version which expects older columns; pair code rollback with the appropriate pre-update backup. No GitHub Actions.
+
+## v0.2.4 — recurring calendar and mobile UI
+
+**Database migration v3 to v4** adds `recurring_rules` and `recurring_exceptions`, without rewriting existing diary entries or plans. Before upgrading, save a verified SQLite backup outside the container on NAS/PBS storage.
+
+Inside the Fatigue Manager LXC (as root):
+
+    cd /opt/fatigue-manager
+    bash scripts/backup.sh
+    bash scripts/update.sh
+
+Verify service and schema:
+
+    systemctl status fatigue-manager --no-pager
+    sqlite3 /var/lib/fatigue-manager/fatigue.sqlite3 'PRAGMA user_version;'
+
+Expected schema number: `4`. Also run local pytest in a temporary virtual environment and smoke-test the new calendar on phone and desktop: mobile layout, edit/delete dialog, current-time indicator, daily starting-energy default, recurring task generation and skipping single occurrences. Hard refresh the browser if an old JS/CSS bundle is cached.
+
+To revert to an earlier code release which only understands schema v3, restore BOTH that code and the matching pre-migration database backup. No actions were run on existing containers other than the deployment steps the user chooses to execute.

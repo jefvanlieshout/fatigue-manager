@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.2.4 — 2026-10-13
+
+- Mobile weekly planner: compact header, minimal text above timetable, maximized calendar viewport and easier scrolling.
+- Tap a planned or completed event to edit/delete directly; recurring occurrences support skip-once and delete-series actions.
+- Live red line marking current time in today's column; updates every 15 seconds and highlights today's date.
+- Unrecorded daily energy defaults visually to 0 rather than 100; no synthetic diary measurement is saved.
+- Daily, weekday, weekly and custom-day repeating tasks with optional end date; per-occurrence modifications and completion.
+- SQLite v3→v4 migration adds compact recurring series and exception tables, without changing existing diary and plans.
+- Regression tests and bilingual copy updated; no GitHub Actions.
+
+
 ## v0.2.3 — 2026-10-13
 
 - Fix click-and-hold calendar range selection using pointer movement and grid coordinates rather than unreliable link hover events; support auto-scrolling for long ranges.

@@ -61,7 +61,7 @@ def init_db() -> None:
     with connect() as db:
         db.execute("PRAGMA journal_mode=WAL")
         version = db.execute("PRAGMA user_version").fetchone()[0]
-        if version > 3:
+        if version > 4:
             raise RuntimeError("Database schema is newer than this app; restore matching code.")
         if version == 0:
             db.execute("""
@@ -351,6 +351,7 @@ def delete_entry(request: Request, entry_id: int, token: str = Form(...)):
     entry = find_entry(entry_id)
     with connect() as db:
         db.execute("UPDATE planned_activities SET status='planned', linked_entry_id=NULL WHERE linked_entry_id=?", (entry_id,))
+        db.execute("DELETE FROM recurring_exceptions WHERE linked_entry_id=?", (entry_id,))
         db.execute("DELETE FROM entries WHERE id=?", (entry_id,))
     return RedirectResponse(
         "/?day=" + local_time(entry["occurred_at"]).date().isoformat(), status_code=303

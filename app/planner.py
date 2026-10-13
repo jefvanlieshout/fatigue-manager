@@ -16,11 +16,11 @@ router = APIRouter(prefix="/planner")
 
 
 def initialize_planner_database() -> None:
-    """Transactional, repeatable v1/v2 -> v3 migration; preserve existing diaries."""
+    """Transactional migration from older databases up to v4."""
     with connect() as db:
         db.execute("BEGIN IMMEDIATE")
         version = db.execute("PRAGMA user_version").fetchone()[0]
-        if version not in (1, 2, 3):
+        if version not in (1, 2, 3, 4):
             raise RuntimeError("Unsupported database version for planner migration")
         db.execute("""
             CREATE TABLE IF NOT EXISTS daily_energy (
@@ -50,6 +50,8 @@ def initialize_planner_database() -> None:
             if "ended_at" not in existing_entries:
                 db.execute("ALTER TABLE entries ADD COLUMN ended_at TEXT")
             db.execute("PRAGMA user_version=3")
+    from .recurrence import init_recurrence_db
+    init_recurrence_db()
 
 
 def now_utc() -> str:
@@ -147,7 +149,8 @@ def all_plans_for(start: date, end: date) -> list[dict]:
             "ORDER BY scheduled_day, scheduled_time IS NULL, scheduled_time, id",
             (start.isoformat(), end.isoformat()),
         ).fetchall()
-    return [dict(row) for row in rows]
+    from .recurrence import recurring_plans
+    return [{**dict(row), "recurring": False} for row in rows] + recurring_plans(start, end)
 
 
 def week_data(selected: date) -> tuple[date, list[dict]]:
@@ -223,12 +226,15 @@ def calendar_week(days: list[dict]) -> tuple[list[str], list[dict]]:
                 "kind": "recorded", "name": record["activity_name"],
                 "id": record["id"], "time": record["display_time"],
                 "end_time": record["end_time"], "delta": record["delta"],
+                "before": record["before"], "after": record["after"],
             })
         for plan in day["plans"]:
             event = {
                 "kind": "planned", "name": plan["activity_name"],
                 "id": plan["id"], "time": plan["scheduled_time"],
                 "end_time": plan["end_time"], "delta": plan["suggested"],
+                "recurring": plan.get("recurring", False),
+                "explicit_delta": plan["expected_delta"],
             }
             if event["time"] is None:
                 day["untimed"].append(event)
@@ -304,7 +310,7 @@ def week_page(request: Request, week: str | None = None):
 
 
 @router.get("/day")
-def day_page(request: Request, day: str | None = None, edit_plan: int | None = None, time: str | None = None):
+def day_page(request: Request, day: str | None = None, edit_plan: int | None = None, edit_recurring: int | None = None, time: str | None = None):
     if response := require_login(request):
         return response
     date_value = parsed_day(day)
@@ -325,6 +331,9 @@ def day_page(request: Request, day: str | None = None, edit_plan: int | None = N
         editing = get_plan(edit_plan)
         if editing["scheduled_day"] != key or editing["status"] != "planned":
             raise HTTPException(404, "Editable planned activity not found for this day.")
+    if edit_recurring is not None:
+        from .recurrence import occurrence_plan
+        editing = occurrence_plan(edit_recurring, date_value)
     return templates.TemplateResponse(
         request=request, name="planner/day.html",
         context={
@@ -514,3 +523,7 @@ def create_from_timetable(
                 (name, before, after, observed, now_utc(), observed_end),
             )
     return RedirectResponse(destination(selected.isoformat(), "week"), status_code=303)
+
+
+from .calendar_actions import router as calendar_actions_router
+router.include_router(calendar_actions_router)
