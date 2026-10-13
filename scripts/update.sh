@@ -11,6 +11,7 @@ git merge-base --is-ancestor "$old" "$new" || { echo 'Not a fast-forward'; exit 
 bash scripts/backup.sh
 git merge --ff-only origin/main
 .venv/bin/pip install -r requirements.txt
+.venv/bin/python scripts/check-templates.py
 systemctl restart fatigue-manager
 sleep 2
 systemctl is-active --quiet fatigue-manager && curl -fsS http://127.0.0.1:8080/healthz || { echo "Update failed; previous commit $old; see deployment guide for restore"; exit 1; }

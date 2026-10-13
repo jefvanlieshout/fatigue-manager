@@ -9,6 +9,7 @@ install -d -o fatigue-manager -g fatigue-manager -m 700 /var/lib/fatigue-manager
 install -d -m 700 /var/backups/fatigue-manager
 python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt
+.venv/bin/python scripts/check-templates.py
 if [[ ! -e /etc/fatigue-manager.env ]]; then
   read -r -s -p 'Choose password (12+ characters): ' password; echo
   (( ${#password} >= 12 )) || { echo 'Password too short'; exit 1; }

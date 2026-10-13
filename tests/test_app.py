@@ -42,3 +42,11 @@ def test_dst_day():
     from datetime import date,datetime
     a,b=main.date_bounds(date(2026,3,29))
     assert (datetime.fromisoformat(b)-datetime.fromisoformat(a)).total_seconds()==23*3600
+
+def test_all_html_templates_compile():
+    from jinja2 import Environment, FileSystemLoader
+    from pathlib import Path
+    root = Path(__file__).resolve().parents[1] / "app" / "templates"
+    env = Environment(loader=FileSystemLoader(str(root)), autoescape=True)
+    for name in env.list_templates(extensions=["html"]):
+        env.get_template(name)

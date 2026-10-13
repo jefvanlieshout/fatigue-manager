@@ -43,3 +43,7 @@ GitHub is public. Only source, docs and scripts belong there—never health reco
 - No GitHub Actions; keep release process manual.
 - App not yet installed on user's Proxmox; scripts still need real-environment verification.
 - Keep main UI simple as new optional features are added.
+
+## Hotfix v0.1.1 — 2026-10-13
+
+First live installation exposed HTTP 500 after successful login: `app/templates/index.html` omitted the closing Jinja `{% endblock %}`. Appended the missing tag. Added `scripts/check-templates.py`, invoked in install/update, and a pytest regression test to prevent further undetected template syntax errors. Current release should be updated in the LXC via `bash /opt/fatigue-manager/scripts/update.sh`. This fix is not yet verified on the actual LXC; if login still fails, capture `journalctl -u fatigue-manager -n 80 --no-pager`.
