@@ -6,7 +6,7 @@ Updated: 2026-10-13. Repository: https://github.com/jefvanlieshout/fatigue-manag
 
 Project created for a family member managing fatigue and using an MS clinic-inspired paper activity/energy diary. Existing apps were judged overwhelming, including unrelated features such as pain tracking. The most important goal is a simple, sleek mobile experience that costs very little energy to use.
 
-Core flow: activity name, subjective energy before (0–100), energy after (0–100), save. Changes and daily history should be clear. Optional advanced features must remain **opt-in or hidden**, and NEVER clutter the primary screen. Interface is in Dutch. No medical diagnosis, clinical energy budget or deterministic battery accounting.
+Core flow: activity name, subjective energy before (0–100), energy after (0–100), save. Changes and daily history should be clear. Optional advanced features must remain **opt-in or hidden**, and NEVER clutter the primary screen. Interface is currently Dutch in v0.1.1; English-default with a Dutch language switch is planned. No medical diagnosis, clinical energy budget or deterministic battery accounting.
 
 ## Implementation v0.1
 
@@ -32,7 +32,7 @@ GitHub is public. Only source, docs and scripts belong there—never health reco
 3. Per-activity distributions with medians, range and sample sizes, avoiding false precision.
 4. Optional recurring activities (sleep, cooking, waking) and fixed/movable plans.
 5. Optional planner suggesting gentler schedules while emphasizing uncertainty and personal choice.
-6. Consider additional accounts only if required; current v0.1 is a single private diary.
+6. Implement language choice (English default, Dutch optional) and separately secured family accounts as planned in docs/I18N_MULTIUSER_PLAN.md; current v0.1 remains a single private diary.
 
 ## Maintenance / future agent notes
 
@@ -41,9 +41,13 @@ GitHub is public. Only source, docs and scripts belong there—never health reco
 - Test with python -m pytest -q in a venv before deployment.
 - Verify startup, login, add/edit/delete, date boundaries (including DST), CSV export, backups and restoration.
 - No GitHub Actions; keep release process manual.
-- App not yet installed on user's Proxmox; scripts still need real-environment verification.
+- User confirmed v0.1.1 login now works on their installed Proxmox LXC (2026-10-13). Provisioning scripts were not independently tested here.
 - Keep main UI simple as new optional features are added.
 
 ## Hotfix v0.1.1 — 2026-10-13
 
 First live installation exposed HTTP 500 after successful login: `app/templates/index.html` omitted the closing Jinja `{% endblock %}`. Appended the missing tag. Added `scripts/check-templates.py`, invoked in install/update, and a pytest regression test to prevent further undetected template syntax errors. Current release should be updated in the LXC via `bash /opt/fatigue-manager/scripts/update.sh`. This fix is not yet verified on the actual LXC; if login still fails, capture `journalctl -u fatigue-manager -n 80 --no-pager`.
+
+## Approved next steps (planning only, 2026-10-13)
+
+The user requests English and Dutch with English preferred, plus private accounts for multiple people. The complete two-release design, migration plan, security rules and tests are in [docs/I18N_MULTIUSER_PLAN.md](docs/I18N_MULTIUSER_PLAN.md). No application behavior changed in this planning commit.

@@ -1,6 +1,6 @@
 # Fatigue Manager — Energiedagboek
 
-A small, private, mobile-first Dutch activity and energy diary. Designed for people who want to learn what uses or restores their energy, without overwhelming app features.
+A small, private, mobile-first activity and energy diary (currently Dutch, with English + Dutch selection planned). Designed for people who want to learn what uses or restores their energy, without overwhelming app features.
 
 ## First release (v0.1)
 
@@ -49,6 +49,7 @@ For manual local execution, provide environment variables FATIGUE_PASSWORD_HASH,
 
 - [Deployment](docs/DEPLOYMENT.md)
 - [Project handover](HANDOVER.md)
+- [English/Dutch + safe multi-user roadmap](docs/I18N_MULTIUSER_PLAN.md)
 - [Changelog](CHANGELOG.md)
 
 ## Roadmap
