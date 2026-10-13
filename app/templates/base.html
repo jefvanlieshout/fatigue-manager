@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#edf5f0">
   <title>{% block title %}{{ t('brand') }}{% endblock %}</title>
-  <link rel="stylesheet" href="/static/style.css?v=0.2.4">
-  <script src="/static/app.js?v=0.2.4" defer></script>
+  <link rel="stylesheet" href="/static/style.css?v=0.2.5">
+  <script src="/static/app.js?v=0.2.5" defer></script>
 </head>
 <body>
   <div class="shell {% block shell_class %}{% endblock %}">
@@ -20,8 +20,10 @@
         <nav class="primary-nav" aria-label="{{ t('navigation') }}">
           <a href="/">{{ t('tracker') }}</a>
           <a href="/planner/week">{{ t('week') }}</a>
-          <a href="/planner/insights">{{ t('insights') }}</a>
         </nav>
+        {% if request.url.path == "/planner/week" %}
+        <button class="settings-gear" type="button" id="calendar-settings-button" title="{{ t('calendar_settings') }}" aria-label="{{ t('calendar_settings') }}">⚙</button>
+        {% endif %}
         {% endif %}
         <form class="lang-form" action="/language" method="post" aria-label="{{ t('language') }}">
           <input type="hidden" name="token" value="{{ csrf }}">

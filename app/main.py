@@ -61,7 +61,7 @@ def init_db() -> None:
     with connect() as db:
         db.execute("PRAGMA journal_mode=WAL")
         version = db.execute("PRAGMA user_version").fetchone()[0]
-        if version > 4:
+        if version > 5:
             raise RuntimeError("Database schema is newer than this app; restore matching code.")
         if version == 0:
             db.execute("""
@@ -154,12 +154,28 @@ def activity_rows(day: date) -> list[dict]:
 
 
 def suggestions() -> list[str]:
+    """Names used anywhere: recorded, one-off planned, or recurring.
+
+    Recent first; a new activity only needs to be entered once.
+    """
     with connect() as db:
-        rows = db.execute(
-            "SELECT activity_name FROM entries GROUP BY activity_name COLLATE NOCASE "
-            "ORDER BY MAX(occurred_at) DESC LIMIT 15"
-        ).fetchall()
-    return [row["activity_name"] for row in rows]
+        rows = db.execute("""
+            SELECT activity_name, MAX(recent) AS recent FROM (
+                SELECT activity_name, occurred_at AS recent FROM entries
+                UNION ALL
+                SELECT activity_name, created_at AS recent FROM planned_activities
+                UNION ALL
+                SELECT activity_name, created_at AS recent FROM recurring_rules
+            ) GROUP BY activity_name COLLATE NOCASE
+            ORDER BY recent DESC LIMIT 60
+        """).fetchall()
+    found, names = set(), []
+    for row in rows:
+        name = row["activity_name"].strip()
+        if name and name.casefold() not in found:
+            found.add(name.casefold())
+            names.append(name)
+    return names
 
 
 def page_context(request: Request, day: date, editing: dict | None = None) -> dict:

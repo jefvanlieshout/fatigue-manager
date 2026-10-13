@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.2.5 — 2026-10-13
+
+- Unified activity-name suggestions from completed, planned and recurring activities, with a single searchable picker.
+- Moved daily starting-energy inputs out of calendar headers into a collapsible battery strip; Enter saves, no visible Save button or "Default 0" explanation.
+- Hid the Insights navigation tab, preserving existing data and route.
+- Configurable on-screen hours (default 06–23) and A4 print hours (default 07–22).
+- Kept today green and replaced the current-time indicator with a plain continuous red line, fixing the half-hour rollover jump.
+- Removed deletion-confirmation popups.
+- Added ⚙ settings for energy-consumption thresholds and color choices; distinguishes real readings, estimates, energy recovery and missing data.
+- Added a dedicated full-bleed A4 landscape printable weekly calendar (CSS @page margin:0).
+- SQLite v4→v5 migration for persisted preferences, updated regression tests, README and handover. No GitHub Actions.
+
+
 ## v0.2.4 — 2026-10-13
 
 - Mobile weekly planner: compact header, minimal text above timetable, maximized calendar viewport and easier scrolling.

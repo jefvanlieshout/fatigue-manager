@@ -25,14 +25,16 @@ document.addEventListener("DOMContentLoaded", function () {
     after.addEventListener("input", updateEnergy);
     updateEnergy();
   }
-  document.querySelectorAll("form[data-confirm]").forEach(function (form) {
-    form.addEventListener("submit", function (event) {
-      if (!window.confirm(form.dataset.confirm)) event.preventDefault();
-    });
-  });
-
   // Render one event as a block spanning all selected half-hour rows.
   // CSSOM assignments work with our strict self-hosted style Content Security Policy.
+  const calendarPane = document.getElementById("calendar-scroll");
+  const energyPalette = calendarPane ? {
+    "energy-low": calendarPane.dataset.lowColor,
+    "energy-medium": calendarPane.dataset.mediumColor,
+    "energy-high": calendarPane.dataset.highColor,
+    "energy-restored": "#579cc4",
+    "energy-unknown": "#9daab5"
+  } : {};
   document.querySelectorAll(".calendar-event[data-span]").forEach(function (item) {
     const spans = Math.max(1, Math.min(48, Number(item.dataset.span)));
     const lanes = Math.max(1, Number(item.dataset.columns));
@@ -41,6 +43,10 @@ document.addEventListener("DOMContentLoaded", function () {
     item.style.height = (spans * 36 - 4) + "px";
     item.style.left = "calc(" + (lane * 100 / lanes) + "% + 3px)";
     item.style.width = "calc(" + (100 / lanes) + "% - 6px)";
+    const bucket = Object.keys(energyPalette).find(key => item.classList.contains(key));
+    const color = energyPalette[bucket] || "#9daab5";
+    item.style.borderLeftColor = color;
+    item.style.backgroundColor = color + "30";
   });
 
   const dialog = document.getElementById("quick-plan");
@@ -124,8 +130,7 @@ document.addEventListener("DOMContentLoaded", function () {
       setRepeatDays();
       manageActions.hidden = true;
       nameInput.value = "";
-      const priorActivity = document.getElementById("quick-recent-activity");
-      if (priorActivity) priorActivity.value = "";
+      if (picker) picker.hidden = true;
       estimateInput.value = "";
       beforeInput.value = "";
       afterInput.value = "";
@@ -144,8 +149,7 @@ document.addEventListener("DOMContentLoaded", function () {
       idInput.value = data.eventId;
       dialogTitle.textContent = submitButton.dataset.editTitle;
       nameInput.value = data.eventName || "";
-      const priorActivity = document.getElementById("quick-recent-activity");
-      if (priorActivity) priorActivity.value = "";
+      if (picker) picker.hidden = true;
       estimateInput.value = data.eventEstimate || "";
       beforeInput.value = data.eventBefore || "";
       afterInput.value = data.eventAfter || "";
@@ -162,16 +166,6 @@ document.addEventListener("DOMContentLoaded", function () {
         editEvent(link);
       });
     });
-    quickForm.addEventListener("submit", function(event) {
-      const action = event.submitter && event.submitter.value;
-      if (action !== "delete_one" && action !== "delete_series") return;
-      const isSeries = action === "delete_series";
-      const nl = document.documentElement.lang === "nl";
-      const message = isSeries ?
-        (nl ? quickForm.dataset.confirmSeriesNl : quickForm.dataset.confirmSeriesEn) :
-        (nl ? quickForm.dataset.confirmDeleteNl : quickForm.dataset.confirmDeleteEn);
-      if (!window.confirm(message)) event.preventDefault();
-    });
     // Select a range by POSITION, not pointerenter: browsers otherwise start
     // dragging the anchor element and stop emitting events on successive links.
     // Touch remains native scrolling; users can tap and edit start/end manually.
@@ -182,11 +176,41 @@ document.addEventListener("DOMContentLoaded", function () {
     let autoScrollFrame = null;
     let suppressClickUntil = 0;
 
-    const recentSelect = document.getElementById("quick-recent-activity");
-    if (recentSelect) {
-      recentSelect.addEventListener("change", function () {
-        if (recentSelect.value) nameInput.value = recentSelect.value;
+    const picker = document.getElementById("activity-suggest-panel");
+    if (picker) {
+      const options = [...picker.querySelectorAll(".activity-suggest-option")];
+      function showSuggestions() {
+        const needle = nameInput.value.trim().toLocaleLowerCase();
+        let shown = 0;
+        for (const option of options) {
+          const match = option.dataset.activityName.toLocaleLowerCase().includes(needle);
+          option.hidden = !match || shown >= 6;
+          if (match && shown < 6) shown += 1;
+        }
+        picker.hidden = shown === 0;
+      }
+      nameInput.addEventListener("focus", showSuggestions);
+      nameInput.addEventListener("input", showSuggestions);
+      options.forEach(option => option.addEventListener("click", function () {
+        nameInput.value = option.dataset.activityName;
+        picker.hidden = true;
         nameInput.focus();
+      }));
+      nameInput.addEventListener("keydown", function (event) {
+        if (event.key === "Escape") picker.hidden = true;
+        if (event.key === "ArrowDown" && !picker.hidden) {
+          const first = options.find(opt => !opt.hidden);
+          if (first) { event.preventDefault(); first.focus(); }
+        }
+      });
+      picker.addEventListener("keydown", function(event) {
+        if (event.key === "Escape") { picker.hidden = true; nameInput.focus(); }
+        if (event.key === "Enter" && event.target.matches(".activity-suggest-option")) {
+          event.preventDefault(); event.target.click();
+        }
+      });
+      document.addEventListener("pointerdown", function(event) {
+        if (event.target !== nameInput && !picker.contains(event.target)) picker.hidden = true;
       });
     }
     function clearHighlight() {
@@ -319,6 +343,27 @@ document.addEventListener("DOMContentLoaded", function () {
     setMode();
   }
 
+  const settingsDialog = document.getElementById("calendar-settings");
+  const settingsButton = document.getElementById("calendar-settings-button");
+  if (settingsDialog && settingsButton && typeof settingsDialog.showModal === "function") {
+    settingsButton.addEventListener("click", () => settingsDialog.showModal());
+    const closeButton = settingsDialog.querySelector("[data-close-settings]");
+    if (closeButton) closeButton.addEventListener("click", () => settingsDialog.close());
+    settingsDialog.addEventListener("click", event => {
+      if (event.target === settingsDialog) settingsDialog.close();
+    });
+  }
+  const energyDrawer = document.getElementById("energy-drawer");
+  if (energyDrawer) {
+    try {
+      energyDrawer.open = sessionStorage.getItem("fatigue-energy-drawer") === "open";
+    } catch (_) { /* no storage needed */ }
+    energyDrawer.addEventListener("toggle", function() {
+      try { sessionStorage.setItem("fatigue-energy-drawer", energyDrawer.open ? "open" : "closed"); }
+      catch (_) { /* optional */ }
+    });
+  }
+
   // This is a visual clock only; no location or activity data leaves the browser.
   function brusselsNow() {
     const parts = new Intl.DateTimeFormat("en-GB", {
@@ -377,43 +422,46 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     }, { passive: true });
 
-    const marker = document.createElement("span");
+    const marker = document.createElement("div");
     marker.className = "calendar-now-marker";
     marker.setAttribute("aria-hidden", "true");
-    marker.textContent = document.documentElement.lang === "nl" ? "Nu" : "Now";
-    let activeCell = null;
-    let activeHeader = null;
+    scrollPane.appendChild(marker);
     function moveNowLine() {
       const current = brusselsNow();
-      const slot = String(current.hour).padStart(2, "0") + ":" +
-        (current.minute < 30 ? "00" : "30");
-      const cell = scrollPane.querySelector(
-        '.calendar-cell[data-day="' + current.day + '"][data-time="' + slot + '"]');
+      const currentMinutes = current.hour * 60 + current.minute + current.second / 60;
+      const visibleStart = Number(scrollPane.dataset.dayStart) * 60;
+      const visibleEnd = Number(scrollPane.dataset.dayEnd) * 60;
       const dayHeader = scrollPane.querySelector(
         '.calendar-day-head[data-day="' + current.day + '"]');
-      if (activeHeader !== dayHeader) {
-        if (activeHeader) activeHeader.classList.remove("calendar-today");
-        if (dayHeader) dayHeader.classList.add("calendar-today");
-        activeHeader = dayHeader;
+      scrollPane.querySelectorAll(".calendar-day-head.calendar-today").forEach(
+        header => header.classList.remove("calendar-today"));
+      if (dayHeader) dayHeader.classList.add("calendar-today");
+      if (!dayHeader || currentMinutes < visibleStart || currentMinutes >= visibleEnd) {
+        marker.hidden = true;
+        return;
       }
-      if (!cell) {
-        marker.remove();
-        activeCell = null;
-        return; // The visible week doesn't include the current date.
-      }
-      if (cell !== activeCell) {
-        cell.appendChild(marker);
-        activeCell = cell;
-      }
-      const fraction = ((current.minute % 30) * 60 + current.second) / 1800;
-      const height = cell.getBoundingClientRect().height || 36;
-      marker.style.top = (fraction * height) + "px";
+      const slotIndex = Math.floor((currentMinutes - visibleStart) / 30);
+      const tbody = scrollPane.querySelector("tbody");
+      const row = tbody && tbody.rows[slotIndex];
+      const cell = row && row.cells[dayHeader.cellIndex];
+      if (!cell) { marker.hidden = true; return; }
+      marker.hidden = false;
+      // Position in the scroll CONTENT coordinate system, not within a cell.
+      // At e.g. 16:30 the new row begins exactly where 16:29:59 ends.
+      const rect = scrollPane.getBoundingClientRect();
+      const cellRect = cell.getBoundingClientRect();
+      const minutesInside = currentMinutes - (visibleStart + slotIndex * 30);
+      marker.style.top = (cellRect.top - rect.top + scrollPane.scrollTop +
+        minutesInside / 30 * cellRect.height) + "px";
+      marker.style.left = (cellRect.left - rect.left + scrollPane.scrollLeft) + "px";
+      marker.style.width = cellRect.width + "px";
     }
     moveNowLine();
     document.addEventListener("visibilitychange", function () {
       if (!document.hidden) moveNowLine();
     });
-    // Fifteen-second updates with a matching CSS transition look gradual.
-    setInterval(moveNowLine, 15000);
+    window.addEventListener("resize", moveNowLine);
+    // Move precisely enough for a smooth transition while limiting background work.
+    setInterval(moveNowLine, 5000);
   }
 });

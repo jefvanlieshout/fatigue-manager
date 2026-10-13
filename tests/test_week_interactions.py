@@ -18,6 +18,7 @@ def _login(tmp_path):
     assert client.post("/login", data={
         "token": token, "password": PASSWORD,
     }, follow_redirects=False).status_code == 303
+    token = re.search(r'name="token" value="([^"]+)"', client.get("/").text).group(1)
     return client, token
 
 
@@ -25,7 +26,7 @@ def test_week_defaults_zero_without_adding_energy_measurements(tmp_path):
     client, token = _login(tmp_path)
     try:
         html = client.get("/planner/week?week=2026-10-13").text
-        assert html.count("Default 0 · not yet recorded") == 7
+        assert "Default 0" not in html
         assert html.count('name="starting_energy"') == 7
         assert html.count('value="0"') >= 7
         with main.connect() as db:
@@ -43,7 +44,7 @@ def test_week_defaults_zero_without_adding_energy_measurements(tmp_path):
             assert db.execute("SELECT COUNT(*) FROM daily_energy").fetchone()[0] == 1
         html = client.get("/planner/week?week=2026-10-13").text
         assert 'value="35"' in html
-        assert html.count("Default 0 · not yet recorded") == 6
+        assert "Default 0" not in html
         assert 'value="0"' in client.get("/planner/day?day=2026-10-14").text
     finally:
         client.__exit__(None, None, None)
@@ -58,9 +59,9 @@ def test_week_recent_activity_dropdown_uses_actual_diary_entries(tmp_path):
             "occurred_at": "2026-10-13T09:00",
         }, follow_redirects=False).status_code == 303
         html = client.get("/planner/week?week=2026-10-13").text
-        assert 'id="quick-recent-activity"' in html
-        assert 'list="quick-activity-suggestions"' in html
-        assert '<option value="Cooking breakfast">Cooking breakfast</option>' in html
+        assert 'id="activity-suggest-panel"' in html
+        assert 'class="activity-suggest-option"' in html
+        assert 'data-activity-name="Cooking breakfast"' in html
         assert 'id="quick-plan-name"' in html
         assert 'name="end_time"' in html
     finally:
@@ -72,13 +73,13 @@ def test_both_languages_offer_default_label(tmp_path):
     try:
         english = client.get("/planner/week?week=2026-10-13").text
         assert "Previously recorded activities" not in english  # no previous entries yet
-        assert "Default 0" in english
+        assert "Default 0" not in english
         res = client.post("/language", data={
             "token": token, "lang": "nl", "return_to": "/planner/week",
         }, follow_redirects=False)
         assert res.status_code == 303
         dutch = client.get("/planner/week?week=2026-10-13").text
-        assert "Standaard 0" in dutch
+        assert "Standaard 0" not in dutch
     finally:
         client.__exit__(None, None, None)
 

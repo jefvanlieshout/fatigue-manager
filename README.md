@@ -2,7 +2,7 @@
 
 A small, private, mobile-first activity and energy diary (English by default, with Dutch selectable). Designed for people who want to learn what uses or restores their energy, without overwhelming app features.
 
-## Current release: v0.2.4 (mobile calendar, quick editing and repeating activities)
+## Current release: v0.2.5 — streamlined calendar, energy colors and printing
 
 - Activity name, starting energy (0–100), ending energy (0–100).
 - Immediate energy-change feedback.
@@ -124,3 +124,28 @@ For convenience, every unrecorded day shows **0/100 by default** until a real mo
 **This release upgrades SQLite schema v3 to v4** (new recurring rule and exception tables). The existing diary and planned activity tables remain, and the app continues to use the same dedicated Proxmox LXC. Back up your database outside the LXC before updating; run `bash scripts/update.sh` as root, then run the local pytest suite and test the calendar on phone and desktop.
 
 The application still has only **one shared login**. Independent private user accounts remain a separate future milestone. No GitHub Actions, external JS framework, public user registration or external calendar service.
+
+## v0.2.5 — simpler planner, custom energy colors, A4 printing
+
+The planner now focuses on the weekly timetable. **Insights is hidden from the navigation** (underlying feature/data unchanged).
+
+- Activity suggestions combine names from Add Activity, calendar plans, and recurring schedules. A **single searchable list** appears under the activity name; it shows up to six matching activities at a time.
+- Each day’s initial energy rating is accessible under the collapsible **🔋 Starting energy** row above the calendar, instead of filling the day headers. Press **Enter** in a day’s input to save; no visible Save button. The default is still 0/100 and is NOT a stored measurement until submitted.
+- Weekday columns and the time axis are compact. Default visible time: **06:00 up to 23:00** (the final slot starts at 22:30). Any planned activity outside the view is kept and listed in that day’s header; nothing is removed from storage.
+- Today is highlighted **green**. The thin **red current-time line** has no text or end circles and progresses continuously. It only appears in the correct local day column while that hour is visible.
+- Deleting an activity or repeat skips the confirmation popup. Use with care: deletion is immediate. Recorded history for completed repeating events is preserved when deleting the repeating schedule.
+- The ⚙ **Calendar settings** gear, between Week Planner navigation and the EN/NL switch, configures energy-color cutoffs and colors, on-screen start/end hours, and separate printing hours.
+- Energy colors use actual `energy_before - energy_after` for completed diary entries and available estimated changes for planned entries (shown with `~`). Default: **0–10 points used green; 11–20 orange; 21+ red**. A restoring activity gets blue; an unknown cost gets grey. Users can adjust both boundaries and the low/medium/high colors. Neither estimates nor the 0 starting-energy placeholder count as clinical measurements.
+- **Print week** opens a dedicated A4 landscape page. Its default hours are **07:00 up to 22:00**; adjust in settings. Print CSS requests `@page { size: A4 landscape; margin: 0 }` and lays out the full 297×210 mm page, without app navigation. Browser/printer hardware may still impose non-printable edges, margins or scaling; choose 100% scaling, A4 landscape, and no browser headers/footers where available.
+
+### Update
+
+**This release upgrades SQLite from v4 to v5**, adding one `app_preferences` row. Earlier diary entries, planned activities and recurring tasks are preserved. Keep the existing LXC and use the manual update script (no GitHub Actions):
+
+```bash
+cd /opt/fatigue-manager
+bash scripts/backup.sh
+bash scripts/update.sh
+```
+
+Copy a verified backup outside the LXC before upgrading. Test the new gear settings and print view from the browser, and run `python -m pytest -q` with `requirements-dev.txt` installed. If rolling back to pre-v5 code, restore its corresponding pre-migration backup. Full instructions: docs/DEPLOYMENT.md.

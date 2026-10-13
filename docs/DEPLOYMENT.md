@@ -111,3 +111,16 @@ Verify service and schema:
 Expected schema number: `4`. Also run local pytest in a temporary virtual environment and smoke-test the new calendar on phone and desktop: mobile layout, edit/delete dialog, current-time indicator, daily starting-energy default, recurring task generation and skipping single occurrences. Hard refresh the browser if an old JS/CSS bundle is cached.
 
 To revert to an earlier code release which only understands schema v3, restore BOTH that code and the matching pre-migration database backup. No actions were run on existing containers other than the deployment steps the user chooses to execute.
+
+## v0.2.5 — Calendar settings and A4 print
+
+This release applies the v4→v5 SQLite migration on service startup: adds an `app_preferences` settings row; retains all diary, day-energy, planned and recurring records. Create a verified external backup **before** updating.
+
+    cd /opt/fatigue-manager
+    bash scripts/backup.sh
+    bash scripts/update.sh
+    sqlite3 /var/lib/fatigue-manager/fatigue.sqlite3 'PRAGMA user_version;'
+
+Expected schema: **5**. Perform local pytest in a temporary virtual environment, then try the gear dialog, save setting preferences, Enter-to-save daily battery field, lookup of earlier calendar tasks, current-time rollover, and A4 print view. Browser hard reload if static assets are cached; asset query version is v0.2.5. Print CSS asks for zero margins but actual hardware may prevent borderless output.
+
+If reverting to code that only supports schema v4, restore both its Git revision and a pre-update v4 database backup. No GitHub Actions or additional services are needed.

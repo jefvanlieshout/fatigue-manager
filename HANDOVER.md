@@ -1,6 +1,6 @@
 # Fatigue Manager — Handover
 
-Updated: 2026-10-13 — v0.2.4 mobile and recurring activities. Repository: https://github.com/jefvanlieshout/fatigue-manager
+Updated: 2026-10-13 — v0.2.5 calendar settings, printing and activity lookup. Repository: https://github.com/jefvanlieshout/fatigue-manager
 
 ## Background and core requirement
 
@@ -141,3 +141,28 @@ Implementation:
 - No third-party calendar dependency, no telemetry, no GitHub Actions, no new LXC. Still SINGLE-USER: future multiuser account isolation remains separate and is NOT delivered by v0.2.4.
 
 Deployment: back up database to the NAS/off-container location before running existing `bash scripts/update.sh` from /opt/fatigue-manager inside the LXC. On successful restart SQLite PRAGMA user_version should equal 4. Test the full pytest suite, login and calendar on a real phone, tap-to-edit/delete, red marker, repeat patterns and skip/delete series. If rollback is needed, use a matching pre-update backup alongside prior code. Code was not run on the user's Proxmox by the assistant and local test execution there is not confirmed.
+
+## v0.2.5: Requested calendar UX and printable week (2026-10-13)
+
+The user requested:
+- Remember calendar-added activity names as well as Add Activity diary names; simplify the multiple-choice suggestions UI.
+- Remove starting energy from the weekly grid header; place a battery icon by its input; save with Enter, no visible Save button; remove the 'Default 0' explanation.
+- Hide Insights navigation for now (route still exists).
+- Default calendar 06:00–23:00, adjustable in a gear. Default A4 print window 07:00–22:00, independently adjustable.
+- Keep today green. Replace the red marker with a plain line (no "Now" or circles), fix backwards jump at half-hour rollover.
+- Delete immediately without browser confirmation.
+- Gear icon between Week Planner and EN/NL. Configurable low/medium/high energy-used thresholds + colors; defaults <=10 green, 11–20 orange, >20 red. Recorded actuals vs planned estimates clearly distinct.
+- A Print Week link produces full-bleed A4 landscape (297×210mm; @page margin:0), separate print stylesheet/scripts, no page UI. Physical printer margins may override CSS.
+
+Implementation:
+- `app/main.py::suggestions()` combines activity names from `entries`, `planned_activities` and `recurring_rules` and case-insensitively deduplicates them.
+- `app/templates/planner/week.html`: separate collapsible energy drawer; individual per-day Enter-to-save forms with 🔋 icon and hidden submit; clean dropdown results; color data classes; settings dialog; print link. `app/templates/base.html`: hide Insights link, add small gear, cache-bump asset query.
+- `app/static/app.js`: single searchable picker limited to 6 matched options; CSSOM event coloring; dialog opening; no delete confirm; single now marker positioned continuously in the scroll coordinate system instead of re-parented to half-hour cells; green today header; settings modal.
+- `app/preferences.py`: validated, SQLite-backed thresholds, color strings, screen/print hour ranges, default settings (10,20; green/orange/red; 6–23; print7–22); energy class mapping. `app/settings_routes.py`: authenticated CSRF-protected settings POST and print GET.
+- `app/planner.py`: generate only configured timetable rows, list entries outside the display range rather than losing them, add color buckets and predicted flag. `app/recurrence.py`: permits v5 schema without regressing v4.
+- `app/templates/planner/print.html`, `app/static/print.css`, `print.js`: dedicated landscape A4 rendering, 0 browser page margin in @page CSS, time-window scaling.
+- SQLite schema v4→v5 adds `app_preferences` only; no destructive change to user data. `app/main.py` accepts version 5, recurring init only increments version3→4, then preferences migrates4→5. Still single-user/private.
+- Local tests: update legacy expectations to 06–23 and no default-energy hint; add `tests/test_calendar_preferences.py` for color bands/settings validation, CSRF/auth, print output and shared activity suggestions; fix test login helpers to use rotated post-login CSRF token.
+- NO GitHub Actions, no additional LXC, no credentials or health records committed. Changes are made in public GitHub code only; actual Proxmox server was NOT modified here.
+
+Deploy: backup SQLite outside LXC first, then inside /opt/fatigue-manager as root run `bash scripts/update.sh`. Startup migration should reach PRAGMA user_version 5. Check local pytest and test on phone and laptop, especially the red-line rollover at XX:29→XX:30 and print margins/print scaling on the actual printer. If rollback is needed, restore the pre-update matching database backup and source revision. 

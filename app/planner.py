@@ -20,7 +20,7 @@ def initialize_planner_database() -> None:
     with connect() as db:
         db.execute("BEGIN IMMEDIATE")
         version = db.execute("PRAGMA user_version").fetchone()[0]
-        if version not in (1, 2, 3, 4):
+        if version not in (1, 2, 3, 4, 5):
             raise RuntimeError("Unsupported database version for planner migration")
         db.execute("""
             CREATE TABLE IF NOT EXISTS daily_energy (
@@ -52,6 +52,8 @@ def initialize_planner_database() -> None:
             db.execute("PRAGMA user_version=3")
     from .recurrence import init_recurrence_db
     init_recurrence_db()
+    from .preferences import init_preferences
+    init_preferences()
 
 
 def now_utc() -> str:
@@ -210,13 +212,13 @@ def calendar_slot(time_text: str) -> str:
     return f"{minute // 60:02d}:{(minute % 60 // 30) * 30:02d}"
 
 
-def calendar_week(days: list[dict]) -> tuple[list[str], list[dict]]:
+def calendar_week(days: list[dict], start_hour: int = 6, end_hour: int = 23) -> tuple[list[str], list[dict]]:
     """Visual half-hour grid; keep precise times in storage and event labels.
 
     One event spans multiple slots rather than creating copies. Overlaps share
     available width. Untimed events appear above the timetable.
     """
-    slots = [f"{hour:02d}:{minute:02d}" for hour in range(24) for minute in (0, 30)]
+    slots = [f"{hour:02d}:{minute:02d}" for hour in range(start_hour, end_hour) for minute in (0, 30)]
     for day in days:
         day["slots"] = {slot: [] for slot in slots}
         day["untimed"] = []
@@ -243,12 +245,18 @@ def calendar_week(days: list[dict]) -> tuple[list[str], list[dict]]:
         for event in timed:
             start_min = minute_of_day(event["time"])
             end_min = minute_of_day(event["end_time"]) if event["end_time"] else start_min + 30
-            beginning = start_min // 30
-            ending = min(48, max(beginning + 1, (end_min + 29) // 30))
+            first_visible = start_hour * 60
+            last_visible = end_hour * 60
+            if start_min >= last_visible or end_min <= first_visible:
+                day["untimed"].append(event)
+                continue
+            beginning = max(0, start_min // 30 - start_hour * 2)
+            ending = min(len(slots), max(beginning + 1, (end_min + 29) // 30 - start_hour * 2))
             event["start_min"] = beginning * 30
             event["end_min"] = ending * 30
             event["span_slots"] = ending - beginning
             event["slot"] = slots[beginning]
+        timed = [event for event in timed if "slot" in event]
         timed.sort(key=lambda e: (e["start_min"], e["end_min"], e["kind"], e["id"]))
 
         def assign_group(group: list[dict]) -> None:
@@ -295,14 +303,23 @@ def destination(day: str, view: str = "day") -> str:
 def week_page(request: Request, week: str | None = None):
     if response := require_login(request):
         return response
+    from .preferences import load_preferences, energy_class
+    prefs = load_preferences()
     monday, days = week_data(parsed_day(week))
-    slots, days = calendar_week(days)
+    slots, days = calendar_week(days, prefs["day_start"], prefs["day_end"])
+    for d in days:
+        for events in d["slots"].values():
+            for event in events:
+                event["energy_class"] = energy_class(event["delta"], prefs)
+                event["estimated"] = event["kind"] == "planned"
+        for event in d["untimed"]:
+            event["energy_class"] = energy_class(event["delta"], prefs)
     return templates.TemplateResponse(
         request=request, name="planner/week.html",
         context={
             "csrf": csrf(request), "monday": monday.isoformat(), "days": days,
             "slots": slots,
-            "suggestions": suggestions(),
+            "suggestions": suggestions(), "prefs": prefs,
             "previous_week": (monday - timedelta(days=7)).isoformat(),
             "next_week": (monday + timedelta(days=7)).isoformat(),
         },
@@ -527,3 +544,5 @@ def create_from_timetable(
 
 from .calendar_actions import router as calendar_actions_router
 router.include_router(calendar_actions_router)
+from .settings_routes import router as settings_router
+router.include_router(settings_router)

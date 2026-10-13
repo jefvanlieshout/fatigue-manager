@@ -17,6 +17,7 @@ def authenticated(tmp_path):
     assert client.post("/login", data={
         "password": "test-password-12345", "token": csrf
     }, follow_redirects=False).status_code == 303
+    csrf = re.search(r'name="token" value="([^"]+)"', client.get("/").text).group(1)
     return client, csrf
 
 
@@ -34,7 +35,7 @@ def test_schema_v3_upgrades_existing_rows(tmp_path):
     initialize_planner_database()
     initialize_planner_database()  # idempotent
     with main.connect() as db:
-        assert db.execute("PRAGMA user_version").fetchone()[0] == 4
+        assert db.execute("PRAGMA user_version").fetchone()[0] == 5
         assert "ended_at" in [c["name"] for c in db.execute("PRAGMA table_info(entries)")]
         assert "end_time" in [c["name"] for c in db.execute("PRAGMA table_info(planned_activities)")]
         row = db.execute("SELECT activity_name,energy_before,energy_after,ended_at FROM entries").fetchone()

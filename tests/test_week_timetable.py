@@ -20,17 +20,18 @@ def diary(tmp_path):
             follow_redirects=False,
         )
         assert response.status_code == 303
+        token = re.search(r'name="token" value="([^"]+)"', client.get("/").text).group(1)
         yield client, token
 
 
-def test_all_seven_days_and_24_hours_render(diary):
+def test_all_seven_days_and_configured_hours_render(diary):
     client, _ = diary
     html = client.get("/planner/week?week=2026-10-14").text
     assert html.count('class="calendar-day-head"') == 7
-    assert html.count('class="calendar-cell"') == 48 * 7
+    assert html.count('class="calendar-cell"') == 34 * 7
     assert 'data-day="2026-10-14" data-time="14:30"' in html
-    assert 'data-day="2026-10-18" data-time="23:30"' in html
-    assert "00:00" in html and "23:30" in html
+    assert 'data-day="2026-10-18" data-time="22:30"' in html
+    assert "06:00" in html and "22:30" in html
     assert "calendar-scroll" in html
     assert 'id="energy-2026-10-12"' in html
     assert 'id="energy-2026-10-18"' in html
@@ -62,7 +63,7 @@ def test_slot_plan_saves_and_appears_only_on_correct_day(diary):
     assert saved.headers["location"] == "/planner/week?week=2026-10-14"
     monday, days = week_data(__import__("datetime").date(2026, 10, 14))
     slots, days = calendar_week(days)
-    assert len(slots) == 48
+    assert len(slots) == 34
     assert "Walk to the park" in [
         event["name"] for event in days[2]["slots"]["14:30"]
     ]

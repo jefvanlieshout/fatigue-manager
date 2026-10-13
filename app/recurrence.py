@@ -12,7 +12,7 @@ def init_recurrence_db() -> None:
     with connect() as db:
         db.execute("BEGIN IMMEDIATE")
         version = db.execute("PRAGMA user_version").fetchone()[0]
-        if version not in (3, 4):
+        if version not in (3, 4, 5):
             raise RuntimeError(f"Expected v3 or v4 database, got {version}")
         db.execute("""
             CREATE TABLE IF NOT EXISTS recurring_rules (
@@ -41,7 +41,8 @@ def init_recurrence_db() -> None:
             )
         """)
         db.execute("CREATE INDEX IF NOT EXISTS idx_recurring_dates ON recurring_rules(start_day,until_day)")
-        db.execute("PRAGMA user_version=4")
+        if version == 3:
+            db.execute("PRAGMA user_version=4")
 
 
 def parse_repeat(pattern: str, start_day: date, custom_days: list[str]) -> str:

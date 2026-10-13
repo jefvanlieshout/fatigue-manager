@@ -1,0 +1,120 @@
+"""Calendar preferences, shared activity lookup, printable week, and security."""
+import re
+from datetime import date
+
+from fastapi.testclient import TestClient
+from app import main
+from app.preferences import DEFAULTS, energy_class, validate_preferences, load_preferences
+from app.planner import calendar_week, week_data
+
+
+def login(tmp_path):
+    main.DB_PATH = tmp_path / "settings.sqlite3"
+    main.PASSWORD_HASH = main.hash_password("test-user-password-123")
+    client = TestClient(main.app)
+    client.__enter__()
+    csrf = re.search(r'name="token" value="([^"]+)"', client.get("/login").text).group(1)
+    response = client.post("/login", data={"token": csrf,
+        "password": "test-user-password-123"}, follow_redirects=False)
+    assert response.status_code == 303
+    csrf = re.search(r'name="token" value="([^"]+)"', client.get("/").text).group(1)
+    return client, csrf
+
+
+def test_color_bands_and_validation():
+    p = DEFAULTS
+    assert energy_class(0, p) == "energy-low"
+    assert energy_class(-10, p) == "energy-low"
+    assert energy_class(-11, p) == "energy-medium"
+    assert energy_class(-20, p) == "energy-medium"
+    assert energy_class(-21, p) == "energy-high"
+    assert energy_class(-100, p) == "energy-high"
+    assert energy_class(25, p) == "energy-restored"
+    assert energy_class(None, p) == "energy-unknown"
+    values = DEFAULTS.copy()
+    values.update(low_max=14, medium_max=28, day_start=8, day_end=21)
+    assert validate_preferences(values)["medium_max"] == 28
+
+
+def test_settings_authentication_and_persistence(tmp_path):
+    client, csrf = login(tmp_path)
+    try:
+        prefs = load_preferences()
+        assert (prefs["day_start"], prefs["day_end"]) == (6,23)
+        assert (prefs["print_start"], prefs["print_end"]) == (7,22)
+        bad = client.post("/planner/settings", data={
+            "token": csrf, "week": "2026-10-13", **{**DEFAULTS, "medium_max": 5}
+        })
+        assert bad.status_code == 422
+        assert load_preferences()["medium_max"] == 20
+        unauthorized = client.post("/planner/settings", data={
+            "token": "wrong", "week": "2026-10-13", **DEFAULTS
+        })
+        assert unauthorized.status_code == 403
+        update = {**DEFAULTS, "low_max": 12, "medium_max": 25,
+                  "day_start": 8, "day_end": 21,
+                  "print_start": 9, "print_end": 20,
+                  "low_color": "#228844"}
+        saved = client.post("/planner/settings", data={
+            "token": csrf, "week": "2026-10-13", **update
+        }, follow_redirects=False)
+        assert saved.status_code == 303
+        assert load_preferences()["day_start"] == 8
+        assert load_preferences()["print_end"] == 20
+        assert load_preferences()["low_color"] == "#228844"
+        week_html = client.get("/planner/week?week=2026-10-13").text
+        assert "08:00" in week_html and "20:30" in week_html
+        assert 'data-low-color="#228844"' in week_html
+    finally:
+        client.__exit__(None, None, None)
+
+
+def test_print_view_a4_range_and_no_data_leak(tmp_path):
+    client, csrf = login(tmp_path)
+    try:
+        page = client.get("/planner/print?week=2026-10-13")
+        assert page.status_code == 200
+        assert "07:00" in page.text and "21:30" in page.text
+        assert "22:30" not in page.text
+        assert 'data-count="30"' in page.text
+        assert "/static/print.css" in page.text
+        assert client.get("/planner/print?week=2026-10-13", follow_redirects=False).status_code == 200
+    finally:
+        client.__exit__(None, None, None)
+
+
+def test_activities_saved_anywhere_are_suggested(tmp_path):
+    client, token = login(tmp_path)
+    try:
+        plan = client.post("/planner/calendar-event", data={
+            "token": token, "day": "2026-10-13", "activity_name": "Garden tidy",
+            "planned_time": "11:00", "end_time": "12:00", "mode": "planned",
+        }, follow_redirects=False)
+        assert plan.status_code == 303
+        assert "Garden tidy" in main.suggestions()
+        assert 'data-activity-name="Garden tidy"' in client.get(
+            "/planner/week?week=2026-10-13"
+        ).text
+        added = client.post("/planner/calendar-event", data={
+            "token": token, "day": "2026-10-14", "activity_name": "Laundry",
+            "planned_time": "11:00", "end_time": "12:00", "mode": "planned",
+            "repeat": "weekly"
+        }, follow_redirects=False)
+        assert added.status_code == 303
+        assert "Laundry" in main.suggestions()
+    finally:
+        client.__exit__(None, None, None)
+
+
+def test_ui_markers_gear_and_no_confirm(tmp_path):
+    client, token = login(tmp_path)
+    try:
+        html = client.get("/planner/week?week=2026-10-13").text
+        assert 'id="calendar-settings-button"' in html
+        assert 'id="energy-drawer"' in html
+        assert 'class="energy-inline"' in html
+        assert html.count('name="starting_energy"') == 7
+        assert "Default 0" not in html
+        assert 'href="/planner/insights"' not in html
+    finally:
+        client.__exit__(None, None, None)
