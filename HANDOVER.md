@@ -1,6 +1,6 @@
 # Fatigue Manager — Handover
 
-Updated: 2026-10-13 (v0.2.1 weekly timetable prepared). Repository: https://github.com/jefvanlieshout/fatigue-manager
+Updated: 2026-10-13 (v0.2.2 duration and direct energy input prepared). Repository: https://github.com/jefvanlieshout/fatigue-manager
 
 ## Background and core requirement
 
@@ -85,3 +85,20 @@ Changes:
 - Tests: tests/test_week_timetable.py checks days/hours, slot fallback, activity placement, untimed items, login requirements and saved daily energy.
 - SQLite remains version 2. No migration, new service, public data exposure or GitHub Actions. Existing single-user login remains in place. Different private accounts are still NOT available.
 - For deployment into existing Fatigue Manager LXC: copy a backup outside the LXC, run bash scripts/update.sh in /opt/fatigue-manager, then run Python pytest locally and smoke-test the planner on phone/desktop. The assistant has not accessed the running LXC, so live deployment/test status remains unconfirmed.
+
+## v0.2.2: multi-slot activities + full diary input inside weekly calendar
+
+User requested: select multiple adjacent half-hour/hour calendar slots for one longer activity, and enter the same actual energy-before/energy-after values from the diary within the week planner.
+
+Implementation:
+- Calendar displays one time-spanning event from start to end (rather than repeated separate events); ranges rounded to 30-minute grid boundaries for VISUAL display only. Persist original exact HH:MM times, no duplication. Overlapping events are separated into lanes by a greedy interval allocator (group by contiguous overlap).
+- Desktop: pointer/mouse drag across slots in the same day highlights the selected range and opens quick-add with start=min(selected) and end=last selected slot + 30 minutes. Phone: touch scrolling is preserved; tap start then choose end time in form. Keyboard/screen reader: click/focus the start slot and set end in the form. No third-party frontend library.
+- Native quick-add dialog has activity name, date, start/end time, and Plan for later versus Already completed. Planned mode may include an optional estimated energy change; completed mode REQUIRES actual before and after energy readings (0–100), stored as a normal diary entry. Never treat estimates as recorded data.
+- Existing Day Planner create/edit now accepts an optional end time and shows ranges. Mark-completed flow can record actual ending time. Original tracker remains minimalist; its already-collapsed optional time section gains an actual ending-time input, with correct saving/edit support.
+- Schema v3, transactional and repeatable: add nullable planned_activities.end_time (HH:MM) and entries.ended_at (UTC ISO). Existing v1/v2 entries and plans are retained, with unspecified end times where unknown. app/main.py now allows v3. v3 migration runs once at startup under DB transaction, including older v1 databases.
+- Backend: app/planner.py adds interval validators, calendar layout duration and overlap metadata, direct POST /planner/create, and end-time storage. Existing /planner/plans and /planner/plans/{id}/edit accept optional end_time. app/main.py entry add/edit accepts optional ended_at.
+- UI: app/templates/planner/week.html and day.html, app/templates/index.html, app/static/app.js and style.css, app/i18n.py EN/NL.
+- Tests: tests/test_duration.py plus migrated test_planner.py expects schema v3. Test old schema upgrade, 2.5-hour span, no duplicate plan records, actual energy logger, overlap lanes, missing readings, invalid ranges, edit ending times, initial week behavior. Run ALL pytest locally; NOT GitHub Actions.
+- Limits: one-day activities only (start<end, same local date), no split across midnight yet. Planned times are not evidence of actual energy; energy remains subjective.
+- SINGLE USER still: multiple independent private accounts are a future security release. Never use shared login for separate sensitive diaries. GitHub public, no health data or secrets in it.
+- Proxmox deployment still manual: take off-LXC backup, cd /opt/fatigue-manager && bash scripts/update.sh, run python -m pytest -q in test venv, manually try planner on desktop + phone. The assistant cannot confirm actual deployment until user tests it.

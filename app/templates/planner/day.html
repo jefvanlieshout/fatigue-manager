@@ -41,9 +41,13 @@
     </div>
     <div class="form-pair">
       <div class="field">
-        <label for="plan-time">{{ t('planned_time') }}</label>
+        <label for="plan-time">{{ t('start_time') }}</label>
         <input id="plan-time" name="planned_time" type="time"
                value="{{ editing.scheduled_time if editing and editing.scheduled_time else selected_time or '' }}">
+      </div>
+      <div class="field">
+        <label for="plan-end">{{ t('end_time') }}</label>
+        <input id="plan-end" name="end_time" type="time" value="{{ editing.end_time if editing and editing.end_time else '' }}">
       </div>
       <div class="field">
         <label for="plan-delta">{{ t('estimated_change') }}</label>
@@ -65,7 +69,7 @@
       <span class="status-pill">{{ t('completed') if plan.status == 'completed' else t('planned') }}</span>
     </div>
     <p class="subtle">
-      {% if plan.scheduled_time %}{{ plan.scheduled_time }} · {% endif %}
+      {% if plan.scheduled_time %}{{ plan.scheduled_time }}{% if plan.end_time %}–{{ plan.end_time }}{% endif %} · {% endif %}
       {% if plan.suggested is not none %}
         ~{{ '+' if plan.suggested > 0 else '' }}{{ plan.suggested }} {{ t('points') }}
         ({{ t('manual_estimate') if plan.expected_delta is not none else t('estimate_from', n=plan.estimate_count) }})
@@ -88,7 +92,9 @@
             </div>
           </div>
           <label for="done-time-{{ plan.id }}">{{ t('completion_time') }}</label>
-          <input id="done-time-{{ plan.id }}" name="occurred_at" type="datetime-local" required value="{{ now_time }}">
+          <input id="done-time-{{ plan.id }}" name="occurred_at" type="datetime-local" required value="{{ day }}T{{ plan.scheduled_time if plan.scheduled_time else now_time[11:] }}">
+          <label for="done-end-{{ plan.id }}">{{ t('actual_end_optional') }}</label>
+          <input id="done-end-{{ plan.id }}" name="ended_at" type="datetime-local" value="">
           <button type="submit" class="small-save">{{ t('complete') }}</button>
         </form>
       </details>

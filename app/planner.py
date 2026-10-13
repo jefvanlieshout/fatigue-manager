@@ -16,11 +16,11 @@ router = APIRouter(prefix="/planner")
 
 
 def initialize_planner_database() -> None:
-    """Transactional and repeatable SQLite schema v1 -> v2 migration."""
+    """Transactional, repeatable v1/v2 -> v3 migration; preserve existing diaries."""
     with connect() as db:
         db.execute("BEGIN IMMEDIATE")
         version = db.execute("PRAGMA user_version").fetchone()[0]
-        if version not in (1, 2):
+        if version not in (1, 2, 3):
             raise RuntimeError("Unsupported database version for planner migration")
         db.execute("""
             CREATE TABLE IF NOT EXISTS daily_energy (
@@ -42,8 +42,14 @@ def initialize_planner_database() -> None:
             )
         """)
         db.execute("CREATE INDEX IF NOT EXISTS idx_plans_date ON planned_activities(scheduled_day, scheduled_time, id)")
-        if version == 1:
-            db.execute("PRAGMA user_version=2")
+        if version < 3:
+            existing_plans = {row["name"] for row in db.execute("PRAGMA table_info(planned_activities)")}
+            existing_entries = {row["name"] for row in db.execute("PRAGMA table_info(entries)")}
+            if "end_time" not in existing_plans:
+                db.execute("ALTER TABLE planned_activities ADD COLUMN end_time TEXT")
+            if "ended_at" not in existing_entries:
+                db.execute("ALTER TABLE entries ADD COLUMN ended_at TEXT")
+            db.execute("PRAGMA user_version=3")
 
 
 def now_utc() -> str:
@@ -66,6 +72,34 @@ def clean_time(text: str) -> str | None:
     except ValueError as exc:
         raise HTTPException(422, "Time must be HH:MM.") from exc
     return text
+
+
+def minute_of_day(value: str) -> int:
+    hour, minute = (int(part) for part in value.split(":"))
+    return hour * 60 + minute
+
+
+def clean_interval(start_text: str, end_text: str) -> tuple[str | None, str | None]:
+    """End time is optional for legacy unscheduled plans. Ranges stay within a day."""
+    start, end = clean_time(start_text), clean_time(end_text)
+    if end and not start:
+        raise HTTPException(422, "An end time requires a start time.")
+    if start and end and minute_of_day(end) <= minute_of_day(start):
+        raise HTTPException(422, "End time must be later than start time.")
+    return start, end
+
+
+def actual_end(start_utc: str, end_local: str) -> str | None:
+    if not end_local.strip():
+        return None
+    start = local_time(start_utc)
+    try:
+        end = datetime.strptime(end_local, "%Y-%m-%dT%H:%M").replace(tzinfo=TZ)
+    except ValueError as exc:
+        raise HTTPException(422, "Invalid actual ending date/time.") from exc
+    if end.date() != start.date() or end <= start:
+        raise HTTPException(422, "Actual end must be later, on the same day.")
+    return end.astimezone(timezone.utc).isoformat()
 
 
 def clean_delta(text: str) -> int | None:
@@ -149,6 +183,7 @@ def week_data(selected: date) -> tuple[date, list[dict]]:
                 "activity_name": record["activity_name"],
                 "id": record["id"],
                 "display_time": local_time(record["occurred_at"]).strftime("%H:%M"),
+                "end_time": local_time(record["ended_at"]).strftime("%H:%M") if record["ended_at"] else None,
                 "before": record["energy_before"],
                 "after": record["energy_after"],
                 "delta": record["energy_after"] - record["energy_before"],
@@ -168,40 +203,73 @@ def week_data(selected: date) -> tuple[date, list[dict]]:
 
 
 def calendar_slot(time_text: str) -> str:
-    """Round down to a 30-minute display slot; preserve the actual event time."""
-    hour, minute = (int(part) for part in time_text.split(":"))
-    return f"{hour:02d}:{(minute // 30) * 30:02d}"
+    minute = minute_of_day(time_text)
+    return f"{minute // 60:02d}:{(minute % 60 // 30) * 30:02d}"
 
 
 def calendar_week(days: list[dict]) -> tuple[list[str], list[dict]]:
-    """Arrange existing plans and real diary entries on a 7x48 timetable.
+    """Visual half-hour grid; keep precise times in storage and event labels.
 
-    No writes, date changes, energy assumptions or duplicate completion records.
-    Untimed plans are kept separately rather than assigned a fictional hour.
+    One event spans multiple slots rather than creating copies. Overlaps share
+    available width. Untimed events appear above the timetable.
     """
     slots = [f"{hour:02d}:{minute:02d}" for hour in range(24) for minute in (0, 30)]
     for day in days:
         day["slots"] = {slot: [] for slot in slots}
         day["untimed"] = []
-        for entry in day["records"]:
-            day["slots"][calendar_slot(entry["display_time"])].append({
-                "kind": "recorded", "name": entry["activity_name"],
-                "id": entry["id"], "time": entry["display_time"],
-                "delta": entry["delta"],
-                "before": entry["before"], "after": entry["after"],
+        timed = []
+        for record in day["records"]:
+            timed.append({
+                "kind": "recorded", "name": record["activity_name"],
+                "id": record["id"], "time": record["display_time"],
+                "end_time": record["end_time"], "delta": record["delta"],
             })
         for plan in day["plans"]:
             event = {
                 "kind": "planned", "name": plan["activity_name"],
                 "id": plan["id"], "time": plan["scheduled_time"],
-                "delta": plan["suggested"],
+                "end_time": plan["end_time"], "delta": plan["suggested"],
             }
-            if plan["scheduled_time"]:
-                day["slots"][calendar_slot(plan["scheduled_time"])].append(event)
-            else:
+            if event["time"] is None:
                 day["untimed"].append(event)
-        for events in day["slots"].values():
-            events.sort(key=lambda event: (event["time"], event["kind"]))
+            else:
+                timed.append(event)
+        for event in timed:
+            start_min = minute_of_day(event["time"])
+            end_min = minute_of_day(event["end_time"]) if event["end_time"] else start_min + 30
+            beginning = start_min // 30
+            ending = min(48, max(beginning + 1, (end_min + 29) // 30))
+            event["start_min"] = beginning * 30
+            event["end_min"] = ending * 30
+            event["span_slots"] = ending - beginning
+            event["slot"] = slots[beginning]
+        timed.sort(key=lambda e: (e["start_min"], e["end_min"], e["kind"], e["id"]))
+
+        def assign_group(group: list[dict]) -> None:
+            occupied: list[int] = []
+            for event in group:
+                lane = next((i for i, finish in enumerate(occupied) if finish <= event["start_min"]), None)
+                if lane is None:
+                    lane = len(occupied)
+                    occupied.append(event["end_min"])
+                else:
+                    occupied[lane] = event["end_min"]
+                event["lane"] = lane
+            for event in group:
+                event["columns"] = len(occupied)
+
+        group: list[dict] = []
+        max_end = -1
+        for event in timed:
+            if group and event["start_min"] >= max_end:
+                assign_group(group)
+                group = []
+            group.append(event)
+            max_end = max(max_end, event["end_min"])
+        if group:
+            assign_group(group)
+        for event in timed:
+            day["slots"][event["slot"]].append(event)
     return slots, days
 
 
@@ -301,19 +369,21 @@ def save_energy(
 def create_plan(
     request: Request,
     day: str = Form(...), activity_name: str = Form(...),
-    planned_time: str = Form(""), expected_delta: str = Form(""),
-    view: str = Form("day"), token: str = Form(...),
+    planned_time: str = Form(""), end_time: str = Form(""),
+    expected_delta: str = Form(""), view: str = Form("day"),
+    token: str = Form(...),
 ):
     if response := require_login(request):
         return response
     check_csrf(request, token)
     selected = parsed_day(day)
+    start, end = clean_interval(planned_time, end_time)
+    name, estimate = clean_name(activity_name), clean_delta(expected_delta)
     with connect() as db:
         db.execute(
-            "INSERT INTO planned_activities(scheduled_day,scheduled_time,activity_name,expected_delta,created_at) "
-            "VALUES(?,?,?,?,?)",
-            (selected.isoformat(), clean_time(planned_time), clean_name(activity_name),
-             clean_delta(expected_delta), now_utc()),
+            "INSERT INTO planned_activities(scheduled_day,scheduled_time,end_time,activity_name,expected_delta,created_at) "
+            "VALUES(?,?,?,?,?,?)",
+            (selected.isoformat(), start, end, name, estimate, now_utc()),
         )
     return RedirectResponse(destination(selected.isoformat(), "week" if view == "week" else "day"), status_code=303)
 
@@ -321,18 +391,20 @@ def create_plan(
 @router.post("/plans/{plan_id}/edit")
 def modify_plan(
     request: Request, plan_id: int, day: str = Form(...), activity_name: str = Form(...),
-    planned_time: str = Form(""), expected_delta: str = Form(""), token: str = Form(...),
+    planned_time: str = Form(""), end_time: str = Form(""),
+    expected_delta: str = Form(""), token: str = Form(...),
 ):
     if response := require_login(request):
         return response
     check_csrf(request, token)
     selected = parsed_day(day)
-    name, when, delta = clean_name(activity_name), clean_time(planned_time), clean_delta(expected_delta)
+    name, delta = clean_name(activity_name), clean_delta(expected_delta)
+    when, ending = clean_interval(planned_time, end_time)
     with connect() as db:
         result = db.execute(
-            "UPDATE planned_activities SET scheduled_day=?,scheduled_time=?,activity_name=?,expected_delta=? "
+            "UPDATE planned_activities SET scheduled_day=?,scheduled_time=?,end_time=?,activity_name=?,expected_delta=? "
             "WHERE id=? AND status='planned'",
-            (selected.isoformat(), when, name, delta, plan_id),
+            (selected.isoformat(), when, ending, name, delta, plan_id),
         )
         if result.rowcount == 0:
             raise HTTPException(404, "Editable plan not found.")
@@ -354,7 +426,7 @@ def delete_plan(request: Request, plan_id: int, token: str = Form(...)):
 def complete_plan(
     request: Request, plan_id: int,
     energy_before: int = Form(...), energy_after: int = Form(...),
-    occurred_at: str = Form(...), token: str = Form(...),
+    occurred_at: str = Form(...), ended_at: str = Form(""), token: str = Form(...),
 ):
     if response := require_login(request):
         return response
@@ -369,9 +441,10 @@ def complete_plan(
         name, before, after, observed = parse_entry(
             row["activity_name"], energy_before, energy_after, occurred_at
         )
+        actual_ending = actual_end(observed, ended_at)
         cursor = db.execute(
-            "INSERT INTO entries(activity_name,energy_before,energy_after,occurred_at,created_at) "
-            "VALUES(?,?,?,?,?)", (name, before, after, observed, now_utc()),
+            "INSERT INTO entries(activity_name,energy_before,energy_after,occurred_at,created_at,ended_at) "
+            "VALUES(?,?,?,?,?,?)", (name, before, after, observed, now_utc(), actual_ending),
         )
         db.execute(
             "UPDATE planned_activities SET status='completed',linked_entry_id=? WHERE id=?",
@@ -389,3 +462,54 @@ def insights_page(request: Request):
         request=request, name="planner/insights.html",
         context={"csrf": csrf(request), "statistics": stats},
     )
+
+
+@router.post("/create")
+def create_from_timetable(
+    request: Request, day: str = Form(...),
+    activity_name: str = Form(...), planned_time: str = Form(...),
+    end_time: str = Form(""), expected_delta: str = Form(""),
+    mode: str = Form("planned"), energy_before: str = Form(""),
+    energy_after: str = Form(""), token: str = Form(...),
+):
+    """One simple calendar form: plan ahead OR record before/after readings.
+
+    Planned records never masquerade as observations. A completed record is
+    stored in the same diary used by the existing activity tracker.
+    """
+    if response := require_login(request):
+        return response
+    check_csrf(request, token)
+    selected = parsed_day(day)
+    name = clean_name(activity_name)
+    start, end = clean_interval(planned_time, end_time)
+    if start is None:
+        raise HTTPException(422, "Choose a start time.")
+    if mode not in ("planned", "completed"):
+        raise HTTPException(422, "Invalid activity mode.")
+    if mode == "planned":
+        estimate = clean_delta(expected_delta)
+        with connect() as db:
+            db.execute(
+                "INSERT INTO planned_activities(scheduled_day,scheduled_time,end_time,activity_name,expected_delta,created_at) "
+                "VALUES(?,?,?,?,?,?)",
+                (selected.isoformat(), start, end, name, estimate, now_utc()),
+            )
+    else:
+        try:
+            before, after = int(energy_before), int(energy_after)
+        except ValueError as exc:
+            raise HTTPException(422, "Enter both actual energy readings.") from exc
+        _, before, after, observed = parse_entry(
+            name, before, after, f"{selected.isoformat()}T{start}"
+        )
+        observed_end = actual_end(
+            observed, f"{selected.isoformat()}T{end}" if end else ""
+        )
+        with connect() as db:
+            db.execute(
+                "INSERT INTO entries(activity_name,energy_before,energy_after,occurred_at,created_at,ended_at) "
+                "VALUES(?,?,?,?,?,?)",
+                (name, before, after, observed, now_utc(), observed_end),
+            )
+    return RedirectResponse(destination(selected.isoformat(), "week"), status_code=303)

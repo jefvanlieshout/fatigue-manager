@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.2.2 — 2026-10-13
+
+- Drag-select multiple contiguous half-hour slots on desktop, or choose a start and end time in the phone-friendly form.
+- Display activities as single spanning blocks with their full start/end times, placing overlapping events in parallel lanes.
+- Calendar quick-add can either schedule a future task or record a completed task with actual before/after energy (0–100).
+- Preserve simple tracker while adding an optional actual end-time input in its hidden timing section.
+- Transactional SQLite v2→v3 migration to add end times to plans and diary entries; existing records retained.
+- Add duration, overlapping event, completed diary and migration tests. No GitHub Actions.
+
+
 ## v0.2.1 (2026-10-13)
 
 - Full weekly timetable: seven days across, hours along the side, 30-minute time cells.

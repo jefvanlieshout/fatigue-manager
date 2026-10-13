@@ -25,7 +25,7 @@ def signed_in_client(tmp_path):
     return client, token
 
 
-def test_migration_creates_planner_tables_without_changing_existing_entries(tmp_path):
+def test_migration_to_v3_preserves_existing_entries(tmp_path):
     main.DB_PATH = tmp_path / "migration.sqlite3"
     main.init_db()
     with main.connect() as db:
@@ -38,7 +38,7 @@ def test_migration_creates_planner_tables_without_changing_existing_entries(tmp_
     initialize_planner_database()
     initialize_planner_database()
     with main.connect() as db:
-        assert db.execute("PRAGMA user_version").fetchone()[0] == 2
+        assert db.execute("PRAGMA user_version").fetchone()[0] == 3
         assert db.execute("SELECT activity_name FROM entries").fetchone()[0] == "Original"
 
 

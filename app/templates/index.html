@@ -53,6 +53,9 @@
         <label for="occurred_at">{{ t('when') }}</label>
         <input id="occurred_at" name="occurred_at" type="datetime-local"
           value="{{ default_time }}" required>
+        <label for="ended_at">{{ t('actual_end_optional') }}</label>
+        <input id="ended_at" name="ended_at" type="datetime-local"
+          value="{{ default_end }}">
       </div>
     </details>
     <button class="primary" type="submit">{{ t('save_changes') if editing else t('save_activity') }}</button>
@@ -81,7 +84,7 @@
     <ul class="entries">
       {% for item in entries %}
       <li class="entry">
-        <div class="entry-time">{{ item.display_time }}</div>
+        <div class="entry-time">{{ item.display_time }}{% if item.display_end %}–{{ item.display_end }}{% endif %}</div>
         <div class="entry-body">
           <strong>{{ item.activity_name }}</strong>
           <span class="subtle">{{ item.energy_before }} → {{ item.energy_after }} punten</span>

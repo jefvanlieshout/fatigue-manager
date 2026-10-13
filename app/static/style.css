@@ -219,3 +219,26 @@ footer { text-align: center; color: var(--muted); font-size: .78rem; padding: 14
   .calendar-scroll{max-height:72vh}
   .calendar-dialog{padding:20px}
 }
+
+/* v0.2.2 - duration bars and compact planned/recorded entry selector */
+.calendar-table tbody tr{height:36px}
+.calendar-table .calendar-cell{height:36px;min-height:36px;padding:1px;position:relative}
+.calendar-slot-add{height:33px;min-height:33px}
+.calendar-slot-add.slot-selected{background:#cce9d5;color:#19563b;outline:1px solid #63aa78}
+.calendar-event.calendar-event-positioned{
+  position:absolute;top:2px;z-index:3;margin:0;overflow:hidden;
+  box-shadow:0 1px 3px rgba(23,42,31,.10);min-width:0;
+  border-radius:6px;padding:5px 6px;
+}
+.calendar-event-positioned:hover,.calendar-event-positioned:focus-visible{z-index:5;filter:brightness(.97);outline-offset:0}
+.calendar-dialog select{
+  width:100%;min-height:45px;padding:9px;border:1.5px solid #cbdcd0;
+  border-radius:11px;background:#fff;color:var(--ink);font:inherit
+}
+.calendar-dialog #quick-actual-fields{
+  padding:12px 14px;border-radius:12px;background:#eff7f1;margin-bottom:16px
+}
+.calendar-dialog #quick-actual-fields[hidden],
+.calendar-dialog #quick-estimate-section[hidden]{display:none}
+.calendar-dialog .form-pair{grid-template-columns:repeat(2,minmax(0,1fr))}
+@media(max-width:420px){.calendar-dialog{padding:15px}}

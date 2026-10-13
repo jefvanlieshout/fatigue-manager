@@ -78,3 +78,17 @@ Check:
     journalctl -u fatigue-manager -n 80 --no-pager
 
 Rollback requires both a matching source version and database backup if the schema changed. The current app remains single-user. Account isolation is a separate future security release. Never share the same password between people who need private records.
+
+## v0.2.2 activity durations and calendar energy entry
+
+**SQLite schema update v2 -> v3** (or direct v1 -> v3 on older installs): adds `planned_activities.end_time` and `entries.ended_at`, preserving existing records. Run as root **inside** the Fatigue Manager LXC:
+
+    cd /opt/fatigue-manager
+    bash scripts/backup.sh
+    bash scripts/update.sh
+
+Copy a consistent backup to external NAS storage **before** updating, and do not commit personal health data to GitHub. The usual updater automatically backs up the database, then the service migrates it on startup. To verify the schema, execute:
+
+    sqlite3 /var/lib/fatigue-manager/fatigue.sqlite3 'PRAGMA user_version;'
+
+Expected output: `3`. Also run tests locally and verify the week view, multi-slot blocks, energy readings, editing and activity history. Do not automatically downgrade the database to a code version which expects older columns; pair code rollback with the appropriate pre-update backup. No GitHub Actions.

@@ -61,7 +61,7 @@ def init_db() -> None:
     with connect() as db:
         db.execute("PRAGMA journal_mode=WAL")
         version = db.execute("PRAGMA user_version").fetchone()[0]
-        if version > 2:
+        if version > 3:
             raise RuntimeError("Database schema is newer than this app; restore matching code.")
         if version == 0:
             db.execute("""
@@ -146,6 +146,7 @@ def activity_rows(day: date) -> list[dict]:
         {
             **dict(row),
             "display_time": local_time(row["occurred_at"]).strftime("%H:%M"),
+            "display_end": local_time(row["ended_at"]).strftime("%H:%M") if row["ended_at"] else None,
             "delta": row["energy_after"] - row["energy_before"],
         }
         for row in rows
@@ -175,6 +176,10 @@ def page_context(request: Request, day: date, editing: dict | None = None) -> di
         "default_time": (
             local_time(editing["occurred_at"]).strftime("%Y-%m-%dT%H:%M")
             if editing else datetime.now(TZ).strftime("%Y-%m-%dT%H:%M")
+        ),
+        "default_end": (
+            local_time(editing["ended_at"]).strftime("%Y-%m-%dT%H:%M")
+            if editing and editing["ended_at"] else ""
         ),
     }
 
@@ -274,17 +279,20 @@ def add_entry(
     energy_before: int = Form(...),
     energy_after: int = Form(...),
     occurred_at: str = Form(...),
+    ended_at: str = Form(""),
     token: str = Form(...),
 ):
     if redirect := require_login(request):
         return redirect
     check_csrf(request, token)
     name, before, after, occurred = parse_entry(activity_name, energy_before, energy_after, occurred_at)
+    from .planner import actual_end
+    ending = actual_end(occurred, ended_at)
     with connect() as db:
         db.execute(
-            "INSERT INTO entries(activity_name,energy_before,energy_after,occurred_at,created_at) "
-            "VALUES(?,?,?,?,?)",
-            (name, before, after, occurred, datetime.now(timezone.utc).isoformat()),
+            "INSERT INTO entries(activity_name,energy_before,energy_after,occurred_at,created_at,ended_at) "
+            "VALUES(?,?,?,?,?,?)",
+            (name, before, after, occurred, datetime.now(timezone.utc).isoformat(), ending),
         )
     day = local_time(occurred).date().isoformat()
     return RedirectResponse("/?day=" + day, status_code=303)
@@ -317,6 +325,7 @@ def save_edit(
     energy_before: int = Form(...),
     energy_after: int = Form(...),
     occurred_at: str = Form(...),
+    ended_at: str = Form(""),
     token: str = Form(...),
 ):
     if redirect := require_login(request):
@@ -324,10 +333,12 @@ def save_edit(
     check_csrf(request, token)
     find_entry(entry_id)
     name, before, after, occurred = parse_entry(activity_name, energy_before, energy_after, occurred_at)
+    from .planner import actual_end
+    ending = actual_end(occurred, ended_at)
     with connect() as db:
         db.execute(
-            "UPDATE entries SET activity_name=?,energy_before=?,energy_after=?,occurred_at=? WHERE id=?",
-            (name, before, after, occurred, entry_id)
+            "UPDATE entries SET activity_name=?,energy_before=?,energy_after=?,occurred_at=?,ended_at=? WHERE id=?",
+            (name, before, after, occurred, ending, entry_id)
         )
     return RedirectResponse("/?day=" + local_time(occurred).date().isoformat(), status_code=303)
 

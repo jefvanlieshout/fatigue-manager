@@ -2,7 +2,7 @@
 
 A small, private, mobile-first activity and energy diary (English by default, with Dutch selectable). Designed for people who want to learn what uses or restores their energy, without overwhelming app features.
 
-## Current release: v0.2.1 (weekly timetable and insights)
+## Current release: v0.2.2 (multi-slot activities and actual energy readings)
 
 - Activity name, starting energy (0–100), ending energy (0–100).
 - Immediate energy-change feedback.
@@ -10,7 +10,9 @@ A small, private, mobile-first activity and energy diary (English by default, wi
 - Day-by-day diary; edit/delete entries; reuse recent activity names.
 - CSV export; local SQLite database; one password login.
 - Week calendar with all seven days across the top and all 24 hours along the left, using 30-minute time slots.
-- Click a slot to open a small activity-planning form with the chosen date and time filled in.
+- Click a slot to open a small form with the chosen date and time filled in; choose an end time to make a longer activity.
+- On desktop, drag across adjacent half-hour slots within the same day to select a longer period; on mobile tap the start time and enter the end time.
+- Choose **Plan for later** (optional estimate) or **Already completed** (actual before/after energy values). Completed activities go directly into the same diary as the original tracker.
 - Plans and recorded activities appear at their selected or actual times; untimed plans remain visible.
 - On phones, scroll horizontally to see every day and vertically to see all hours.
 - Daily starting-energy inputs (0–100) remain in the week header, with blank meaning unknown.
@@ -77,4 +79,12 @@ Do not commit .env secrets, SQLite records, backup files, or real health data to
 
 ### Calendar interaction
 
-The timetable initially scrolls near 07:00; earlier and later hours remain available. Events retain their actual timestamps, even when visually grouped into a half-hour row. A time-slot link works without JavaScript by opening the existing day form with date and time prefilled. v0.2.1 introduces no database schema change and continues to use the existing LXC, SQLite and manual GitHub updates.
+The timetable initially scrolls near 07:00; earlier and later hours remain available. Events retain their actual timestamps, even when visually grouped into a half-hour row. A time-slot link works without JavaScript by opening the existing day form with date and time prefilled. v0.2.2 includes a backed-up SQLite v2→v3 migration adding optional activity end times and continues to use the existing LXC, SQLite and manual GitHub updates.
+
+### Logging from the weekly calendar
+
+Click/tap a time cell (or drag over a contiguous block using a mouse). The quick-add form now contains an activity name, day, start time, end time, and a status selector. **Plan for later** saves the schedule without treating estimated energy as fact. **Already completed** asks for the two real 0–100 energy readings and creates an ordinary diary entry. For planned tasks, use the existing day planner to record actual values on completion.
+
+Durations must have an end time after the start time, **within the same day** for now. Scheduled estimates never overwrite actual diary readings. If JS is unavailable, click a slot to use the day planning form with time preselected. The original activity tracker stays lightweight; its optional timing section now also accepts an actual end time.
+
+Before deploying v0.2.2, copy a SQLite backup outside the LXC. The update script creates another backup and runs the automatic schema v2→v3 migration on service startup. After updating, check the calendar, add/edit a long activity, and run local pytest. Existing recordings and plans are preserved.

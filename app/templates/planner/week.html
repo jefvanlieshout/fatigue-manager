@@ -68,10 +68,11 @@
           </a>
           {% for event in d.slots[slot] %}
           <a class="calendar-event {{ 'event-completed' if event.kind == 'recorded' else 'event-planned' }}"
+            data-span="{{ event.span_slots }}" data-lane="{{ event.lane }}" data-columns="{{ event.columns }}"
             href="{{ '/entries/' ~ event.id ~ '/edit' if event.kind == 'recorded' else '/planner/day?day=' ~ d.date ~ '&edit_plan=' ~ event.id }}"
-            title="{{ event.name }} · {{ event.time }}">
+            title="{{ event.name }} · {{ event.time }}{{ '–' ~ event.end_time if event.end_time else '' }}">
             <span class="calendar-event-title">{{ event.name }}</span>
-            <small>{{ event.time }}{% if event.delta is not none %} · {{ '+' if event.delta > 0 else '' }}{{ event.delta }}{% endif %}</small>
+            <small>{{ event.time }}{% if event.end_time %}–{{ event.end_time }}{% endif %}{% if event.delta is not none %} · {{ '+' if event.delta > 0 else '' }}{{ event.delta }}{% endif %}</small>
           </a>
           {% endfor %}
         </td>
@@ -89,25 +90,49 @@
     <button type="button" class="calendar-close" data-close-plan aria-label="{{ t('cancel') }}">×</button>
   </div>
   <p class="subtle">{{ t('plan_form_intro') }}</p>
-  <form action="/planner/plans" method="post" class="entry-form" id="quick-plan-form">
+  <form action="/planner/create" method="post" class="entry-form" id="quick-plan-form">
     <input type="hidden" name="token" value="{{ csrf }}">
-    <input type="hidden" name="view" value="week">
+    <div class="field">
+      <label for="quick-plan-name">{{ t('activity_name') }}</label>
+      <input id="quick-plan-name" name="activity_name" type="text" maxlength="120"
+        placeholder="{{ t('activity_placeholder') }}" required>
+    </div>
     <div class="form-pair">
       <div class="field">
         <label for="quick-plan-day">{{ t('date') }}</label>
         <input id="quick-plan-day" name="day" type="date" required>
       </div>
       <div class="field">
-        <label for="quick-plan-time">{{ t('planned_time') }}</label>
+        <label for="quick-plan-time">{{ t('start_time') }}</label>
         <input id="quick-plan-time" name="planned_time" type="time" step="300" required>
       </div>
     </div>
     <div class="field">
-      <label for="quick-plan-name">{{ t('activity_name') }}</label>
-      <input id="quick-plan-name" name="activity_name" type="text" maxlength="120"
-        placeholder="{{ t('activity_placeholder') }}" required>
+      <label for="quick-plan-end">{{ t('end_time') }}</label>
+      <input id="quick-plan-end" name="end_time" type="time" step="300" required>
+      <p class="muted-small">{{ t('duration_hint') }}</p>
     </div>
-    <details class="optional">
+    <div class="field">
+      <label for="quick-plan-mode">{{ t('activity_status') }}</label>
+      <select id="quick-plan-mode" name="mode">
+        <option value="planned">{{ t('plan_for_later') }}</option>
+        <option value="completed">{{ t('log_completed') }}</option>
+      </select>
+    </div>
+    <div id="quick-actual-fields" hidden>
+      <p class="muted-small">{{ t('actual_energy_help') }}</p>
+      <div class="form-pair">
+        <div class="field">
+          <label for="quick-energy-before">{{ t('before') }}</label>
+          <input id="quick-energy-before" name="energy_before" type="number" min="0" max="100" step="1" inputmode="numeric">
+        </div>
+        <div class="field">
+          <label for="quick-energy-after">{{ t('after') }}</label>
+          <input id="quick-energy-after" name="energy_after" type="number" min="0" max="100" step="1" inputmode="numeric">
+        </div>
+      </div>
+    </div>
+    <details class="optional" id="quick-estimate-section">
       <summary>{{ t('estimate_optional') }}</summary>
       <div class="field">
         <label for="quick-plan-delta">{{ t('estimated_change') }}</label>
@@ -116,7 +141,9 @@
         <p class="muted-small">{{ t('estimated_hint') }}</p>
       </div>
     </details>
-    <button type="submit" class="primary">{{ t('plan_save') }}</button>
+    <button type="submit" class="primary" id="quick-submit"
+      data-plan-label="{{ t('plan_save') }}"
+      data-complete-label="{{ t('save_activity') }}">{{ t('plan_save') }}</button>
   </form>
 </dialog>
 {% endblock %}
