@@ -19,13 +19,14 @@ from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
+from .i18n import language, locale_context, translate
 
 APP_DIR = Path(__file__).resolve().parent
 DB_PATH = Path(os.getenv("FATIGUE_DB_PATH", "/var/lib/fatigue-manager/fatigue.sqlite3"))
 TZ = ZoneInfo(os.getenv("FATIGUE_TIMEZONE", "Europe/Brussels"))
 PASSWORD_HASH = os.getenv("FATIGUE_PASSWORD_HASH", "")
 LOGIN_FAILURES: dict[str, list[float]] = {}
-templates = Jinja2Templates(directory=str(APP_DIR / "templates"))
+templates = Jinja2Templates(directory=str(APP_DIR / "templates"), context_processors=[locale_context])
 
 
 def hash_password(password: str, salt: bytes | None = None) -> str:
@@ -51,6 +52,7 @@ def connect() -> sqlite3.Connection:
     db = sqlite3.connect(DB_PATH, timeout=10)
     db.row_factory = sqlite3.Row
     db.execute("PRAGMA busy_timeout = 10000")
+    db.execute("PRAGMA foreign_keys=ON")
     return db
 
 
@@ -59,7 +61,7 @@ def init_db() -> None:
     with connect() as db:
         db.execute("PRAGMA journal_mode=WAL")
         version = db.execute("PRAGMA user_version").fetchone()[0]
-        if version > 1:
+        if version > 2:
             raise RuntimeError("Database schema is newer than this app; restore matching code.")
         if version == 0:
             db.execute("""
@@ -182,6 +184,8 @@ async def lifespan(_app: FastAPI):
     if not PASSWORD_HASH:
         raise RuntimeError("FATIGUE_PASSWORD_HASH not configured. Run scripts/install.sh.")
     init_db()
+    from .planner import initialize_planner_database
+    initialize_planner_database()
     yield
 
 
@@ -242,7 +246,7 @@ def login(request: Request, password: str = Form(...), token: str = Form(...)):
     failures.append(now)
     LOGIN_FAILURES[ip] = failures
     return templates.TemplateResponse(
-        request=request, name="login.html", context={"csrf": csrf(request), "error": "Onjuist wachtwoord."},
+        request=request, name="login.html", context={"csrf": csrf(request), "error": translate(language(request), "wrong_password")},
         status_code=401,
     )
 
@@ -335,6 +339,7 @@ def delete_entry(request: Request, entry_id: int, token: str = Form(...)):
     check_csrf(request, token)
     entry = find_entry(entry_id)
     with connect() as db:
+        db.execute("UPDATE planned_activities SET status='planned', linked_entry_id=NULL WHERE linked_entry_id=?", (entry_id,))
         db.execute("DELETE FROM entries WHERE id=?", (entry_id,))
     return RedirectResponse(
         "/?day=" + local_time(entry["occurred_at"]).date().isoformat(), status_code=303
@@ -365,3 +370,24 @@ def export_csv(request: Request):
         media_type="text/csv; charset=utf-8",
         headers={"Content-Disposition": 'attachment; filename="fatigue-activities.csv"'},
     )
+
+@app.post("/language")
+def choose_language(
+    request: Request, lang: str = Form(...), return_to: str = Form("/"),
+    token: str = Form(...),
+):
+    check_csrf(request, token)
+    if lang not in ("en", "nl"):
+        raise HTTPException(422, "Unsupported language.")
+    if not return_to.startswith("/") or return_to.startswith("//") or chr(92) in return_to or any(ord(c) < 32 for c in return_to):
+        return_to = "/"
+    response = RedirectResponse(return_to, status_code=303)
+    response.set_cookie(
+        "fatigue_locale", lang, max_age=365 * 86400, httponly=True,
+        secure=os.getenv("FATIGUE_COOKIE_SECURE", "0") == "1", samesite="lax"
+    )
+    return response
+
+
+from .planner import router as planner_router
+app.include_router(planner_router)

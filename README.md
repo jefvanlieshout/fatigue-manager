@@ -1,14 +1,19 @@
 # Fatigue Manager — Energiedagboek
 
-A small, private, mobile-first activity and energy diary (currently Dutch, with English + Dutch selection planned). Designed for people who want to learn what uses or restores their energy, without overwhelming app features.
+A small, private, mobile-first activity and energy diary (English by default, with Dutch selectable). Designed for people who want to learn what uses or restores their energy, without overwhelming app features.
 
-## First release (v0.1)
+## Current release: v0.2 (weekly planner and insights)
 
 - Activity name, starting energy (0–100), ending energy (0–100).
 - Immediate energy-change feedback.
 - Automatic date/time with optional editing.
 - Day-by-day diary; edit/delete entries; reuse recent activity names.
 - CSV export; local SQLite database; one password login.
+- Week planner: optional starting energy for **each day** (0–100; blank means unknown).
+- Plan activities with an optional time and estimated energy change, edit/remove plans, and mark them complete with actual readings.
+- Day view: reported energy timeline without guessing missing values.
+- Insights: case-insensitive activity grouping; median, min/max and sample count.
+- English/Dutch language selector, using one lightweight template system.
 - FastAPI, Jinja2, plain CSS/JavaScript. No Docker, Node, telemetry, AI, GitHub Actions, or cloud account.
 - No medical diagnosis: energy ratings are subjective, not objective battery capacity.
 
@@ -55,9 +60,13 @@ For manual local execution, provide environment variables FATIGUE_PASSWORD_HASH,
 ## Roadmap
 
 1. Activity tracker and history (current).
-2. Optional calendar/history view.
-3. Personal energy patterns with uncertainty.
-4. Opt-in routines and activity planning.
+2. Weekly calendar and activity history (**implemented**).
+3. Personal energy observations and simple estimates (**implemented; no predictive model**).
+4. Optional recurring routines and more advanced activity planning.
 5. Optional assisted schedule suggestions.
+
+The app is currently **single-user**; separate private accounts are planned, not implemented. Do not use the same login for people who must not see each other's records.
+
+Before updating to v0.2, use the included update script as root: it backs up the SQLite database before the automatic v1 → v2 migration. Ensure backups are also copied outside the LXC.
 
 Do not commit .env secrets, SQLite records, backup files, or real health data to the public repository.

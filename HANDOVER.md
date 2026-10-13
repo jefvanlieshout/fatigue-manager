@@ -1,6 +1,6 @@
 # Fatigue Manager — Handover
 
-Updated: 2026-10-13. Repository: https://github.com/jefvanlieshout/fatigue-manager
+Updated: 2026-10-13 (planner release v0.2.0 prepared). Repository: https://github.com/jefvanlieshout/fatigue-manager
 
 ## Background and core requirement
 
@@ -51,3 +51,20 @@ First live installation exposed HTTP 500 after successful login: `app/templates/
 ## Approved next steps (planning only, 2026-10-13)
 
 The user requests English and Dutch with English preferred, plus private accounts for multiple people. The complete two-release design, migration plan, security rules and tests are in [docs/I18N_MULTIUSER_PLAN.md](docs/I18N_MULTIUSER_PLAN.md). No application behavior changed in this planning commit.
+
+## Stage 2 + Stage 3 development: weekly planner and insights (v0.2.0)
+
+Implementation is committed in v0.2.0, but must still be **validated on the owner's LXC**; do not claim deployment without confirmation.
+
+- The original activity tracker remains the default screen. Planner and insights are additional navigation links.
+- Week cards show recorded diary entries and planned activities; **every day has its own optional 0–100 starting-energy input**. Blank means unknown (NOT 0).
+- Each day also has a page with completed activity history, starting-energy editing, and planning/editing/removing/completing tasks with optional time and personal energy estimate.
+- Completing a plan records a real before/after diary entry in a single DB transaction and marks the plan complete. Duplicate completion is rejected. Deleting a linked diary entry reopens its plan.
+- Activity insights: median energy difference, min/max, sample count, grouped by case-insensitive activity name. Estimates have no guarantees or medical standing. No carryover or daily energy "budget" is modeled.
+- Interface translation: English is the default, Dutch can be selected via header controls and saved in a language cookie (account-specific preferences await multiuser).
+- SQLite `PRAGMA user_version` migrates 1→2 at startup: creates `daily_energy(day,starting_energy,updated_at)` and `planned_activities(id,scheduled_day,scheduled_time,activity_name,expected_delta,status,linked_entry_id,created_at)`. Existing diary entries are retained.
+- Planner currently uses the SAME authenticated single-user diary. Multiuser separation is a **separate future v0.3 milestone**; don't add accounts before authorization, account ownership and security tests.
+- Runtime remains FastAPI+Jinja2+SQLite in the SAME LXC. GitHub is still public (do NOT upload user data), and NO GitHub Actions.
+- Tests added in `tests/test_planner.py` for migration, zero vs missing morning energy, plan completion, cross-site request safeguards, translations, week starts and analytics.
+- For upgrade: existing `scripts/update.sh` takes a SQLite backup, updates Git checkout, and restarts the service (migration at startup). **Copy a verified backup outside the LXC** before updating. Run local tests and verify data after reboot.
+- On real device, evaluate screen spacing and whether the 7 daily energy inputs are easy to use. Do not clutter the simple tracker.

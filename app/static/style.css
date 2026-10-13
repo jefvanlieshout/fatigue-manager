@@ -95,3 +95,38 @@ footer { text-align: center; color: var(--muted); font-size: .78rem; padding: 14
   .day-arrow { width: 36px; }
 }
 @media (prefers-reduced-motion: no-preference) { button, a { transition: background-color .16s ease; } }
+
+/* Language selector and optional weekly planner */
+.shell.wide{max-width:1320px}.header{flex-wrap:wrap;padding:12px 0}.header-actions{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.primary-nav{display:flex;gap:14px;align-items:center;flex-wrap:wrap}.primary-nav a{color:var(--green);font-size:.88rem;font-weight:650;text-decoration:none}
+.lang-form{display:flex;align-items:center;gap:3px;color:var(--muted)}.lang-form button{border:0;background:none;color:var(--muted);cursor:pointer;font:inherit;font-size:.8rem;padding:6px 2px}
+.lang-form button.active-lang{font-weight:800;color:var(--green);text-decoration:underline}
+.week-nav{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;margin:0 0 18px}
+.week-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:10px}
+.week-day{border-radius:16px;padding:16px 12px;display:flex;flex-direction:column;min-height:260px}
+.week-day-top{display:flex;align-items:center;justify-content:space-between;gap:4px;flex-wrap:wrap;margin-bottom:18px}
+.week-day-top .eyebrow{font-size:.7rem;margin:0;letter-spacing:.04em}.daily-energy-form{margin-bottom:16px}.daily-energy-form label{font-size:.77rem}
+.number-action{display:flex;align-items:center;gap:5px}.number-action input{border:1.5px solid #cbdcd0;border-radius:9px;padding:6px;min-width:0;width:100%;max-width:85px;font:inherit}
+.muted-small{font-size:.76rem;color:var(--muted)}.small-save{background:#e7f1e9;color:var(--green);border:0;padding:9px;border-radius:9px;font:inherit;font-size:.77rem;font-weight:700;cursor:pointer;min-height:39px}
+.small-save:hover{background:#d6e8d9}.day-activities{flex:1;border-top:1px solid var(--line);padding-top:12px}
+.day-mini-entry{display:flex;align-items:baseline;justify-content:space-between;gap:5px;padding-bottom:10px;font-size:.8rem}
+.day-mini-entry span{overflow-wrap:anywhere}.day-mini-entry strong,.day-mini-entry small{flex:0 0 auto}
+.negative{color:var(--red)}.positive{color:var(--green)}.planned-entry{color:var(--muted)}
+.planned-dot{display:inline-block;background:#adc6b2;border-radius:50%;width:6px;height:6px;margin-right:5px}
+.day-open{color:var(--green);text-decoration:none;font-size:.85rem;font-weight:750;padding:8px 0}
+.planner-note{color:var(--muted);font-size:.83rem;padding:14px}.top-gap{margin-top:16px}
+.form-pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.form-pair input{width:100%;min-width:0}
+.form-pair input[type="time"],.form-pair input[type="number"]{border:1.5px solid #cbdcd0;padding:11px;border-radius:12px;font:inherit}
+.plan-item{border-top:1px solid var(--line);padding:18px 0}.plan-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.status-pill{border-radius:999px;background:#edf6ee;color:var(--green);font-size:.74rem;font-weight:750;padding:4px 9px}
+.plan-item .subtle{margin:6px 0 12px;font-size:.84rem}.completion-form{padding:13px 0}
+.completion-form input[type="datetime-local"]{margin-bottom:15px}.delete-plan{display:inline-block;margin-left:16px}
+.energy-bar{height:10px;background:#e6eee8;border-radius:999px;overflow:hidden;grid-column:1/-1}
+.energy-bar>div{height:100%;background:#69a681;border-radius:inherit}
+.timeline-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px;padding:14px 0;border-top:1px solid var(--line);font-size:.85rem}
+.timeline-row strong{overflow-wrap:anywhere}.insight-item{padding:20px 0;border-top:1px solid var(--line)}
+.insight-item .panel-heading{margin-bottom:8px}.insight-number{font-size:1.6rem;font-weight:790;letter-spacing:-.03em}
+.insight-summary{display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;color:var(--muted);font-size:.85rem}
+@media(max-width:1150px){.week-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(max-width:730px){.week-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.header-actions{gap:9px}.primary-nav{gap:10px}.week-day{min-height:220px}}
+@media(max-width:450px){.header{align-items:flex-start}.header-actions{width:100%;justify-content:space-between}.primary-nav a{font-size:.79rem}.week-grid{grid-template-columns:1fr}.week-day{min-height:0}.day-activities{min-height:20px}}

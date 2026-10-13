@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% block title %}{{ t('daily_title') }} · {{ day }}{% endblock %}
+{% block content %}
+<div class="intro">
+  <a class="quiet-link" href="/planner/week?week={{ day }}">‹ {{ t('return_week') }}</a>
+  <p class="eyebrow top-gap">{{ day }}</p>
+  <h1>{{ t('daily_title') }}</h1>
+  <p class="subtle">{{ t('daily_intro') }}</p>
+</div>
+<section class="panel">
+  <div class="panel-heading"><h2>{{ t('starting_energy') }}</h2></div>
+  <p class="subtle">{{ t('day_energy_hint') }}</p>
+  <form method="post" action="/planner/energy">
+    <input type="hidden" name="token" value="{{ csrf }}">
+    <input type="hidden" name="day" value="{{ day }}">
+    <div class="number-action">
+      <label class="sr-only" for="day-energy">{{ t('starting_energy') }}</label>
+      <input type="number" name="starting_energy" id="day-energy" min="0" max="100" step="1"
+             inputmode="numeric" placeholder="{{ t('not_set') }}"
+             value="{{ energy if energy is not none else '' }}">
+      <span>/100</span><button type="submit" class="small-save">{{ t('save') }}</button>
+    </div>
+  </form>
+</section>
+<section class="panel">
+  <div class="panel-heading"><h2>{{ t('add_plan') if not editing else t('plan_edit') }}</h2>
+    {% if editing %}<a href="/planner/day?day={{ day }}" class="quiet-link">{{ t('cancel') }}</a>{% endif %}
+  </div>
+  <p class="subtle">{{ t('plan_form_intro') }}</p>
+  <form method="post" class="entry-form" action="{{ '/planner/plans/' ~ editing.id ~ '/edit' if editing else '/planner/plans' }}">
+    <input type="hidden" name="token" value="{{ csrf }}">
+    <div class="field">
+      <label for="plan-date">{{ t('date') }}</label>
+      <input id="plan-date" type="date" name="day" value="{{ editing.scheduled_day if editing else day }}" required>
+    </div>
+    <div class="field">
+      <label for="plan-name">{{ t('activity_name') }}</label>
+      <input id="plan-name" name="activity_name" type="text" maxlength="120" required
+             placeholder="{{ t('activity_placeholder') }}"
+             value="{{ editing.activity_name if editing else '' }}">
+    </div>
+    <div class="form-pair">
+      <div class="field">
+        <label for="plan-time">{{ t('planned_time') }}</label>
+        <input id="plan-time" name="planned_time" type="time"
+               value="{{ editing.scheduled_time if editing and editing.scheduled_time else '' }}">
+      </div>
+      <div class="field">
+        <label for="plan-delta">{{ t('estimated_change') }}</label>
+        <input id="plan-delta" name="expected_delta" type="number" min="-100" max="100" step="1"
+               placeholder="—" value="{{ editing.expected_delta if editing and editing.expected_delta is not none else '' }}">
+      </div>
+    </div>
+    <p class="muted-small">{{ t('estimated_hint') }}</p>
+    <button class="primary" type="submit">{{ t('plan_save') }}</button>
+  </form>
+</section>
+<section class="panel">
+  <div class="panel-heading"><h2>{{ t('planned') }}</h2></div>
+  {% if plans %}
+  {% for plan in plans %}
+  <article class="plan-item">
+    <div class="plan-heading">
+      <strong>{{ plan.activity_name }}</strong>
+      <span class="status-pill">{{ t('completed') if plan.status == 'completed' else t('planned') }}</span>
+    </div>
+    <p class="subtle">
+      {% if plan.scheduled_time %}{{ plan.scheduled_time }} · {% endif %}
+      {% if plan.suggested is not none %}
+        ~{{ '+' if plan.suggested > 0 else '' }}{{ plan.suggested }} {{ t('points') }}
+        ({{ t('manual_estimate') if plan.expected_delta is not none else t('estimate_from', n=plan.estimate_count) }})
+      {% else %}{{ t('no_estimate') }}{% endif %}
+    </p>
+    {% if plan.status == 'planned' %}
+      <details class="optional">
+        <summary>{{ t('complete') }}</summary>
+        <p class="subtle">{{ t('complete_hint') }}</p>
+        <form action="/planner/plans/{{ plan.id }}/complete" method="post" class="completion-form">
+          <input type="hidden" name="token" value="{{ csrf }}">
+          <div class="form-pair">
+            <div class="field">
+              <label for="before-{{ plan.id }}">{{ t('before') }}</label>
+              <input type="number" id="before-{{ plan.id }}" name="energy_before" min="0" max="100" required>
+            </div>
+            <div class="field">
+              <label for="after-{{ plan.id }}">{{ t('after') }}</label>
+              <input type="number" id="after-{{ plan.id }}" name="energy_after" min="0" max="100" required>
+            </div>
+          </div>
+          <label for="done-time-{{ plan.id }}">{{ t('completion_time') }}</label>
+          <input id="done-time-{{ plan.id }}" name="occurred_at" type="datetime-local" required value="{{ now_time }}">
+          <button type="submit" class="small-save">{{ t('complete') }}</button>
+        </form>
+      </details>
+      <a class="quiet-link" href="/planner/day?day={{ day }}&amp;edit_plan={{ plan.id }}">{{ t('edit') }}</a>
+    {% endif %}
+    <form class="delete-plan" action="/planner/plans/{{ plan.id }}/delete" method="post" data-confirm="{{ t('confirm_delete_plan') }}">
+      <input type="hidden" name="token" value="{{ csrf }}">
+      <button type="submit" class="button-link danger-link">{{ t('delete_plan') }}</button>
+    </form>
+  </article>
+  {% endfor %}
+  {% else %}
+  <p class="subtle">{{ t('no_plans') }}</p>
+  {% endif %}
+</section>
+<section class="panel">
+  <div class="panel-heading"><h2>{{ t('energy_timeline') }}</h2></div>
+  <p class="subtle">{{ t('timeline_hint') }}</p>
+  {% if energy is not none %}
+    <div class="timeline-row">
+      <strong>{{ t('starting_energy') }}</strong><span>{{ energy }}/100</span>
+      <div class="energy-bar"><div style="width: {{ energy }}%"></div></div>
+    </div>
+  {% endif %}
+  {% for entry in entries %}
+    <div class="timeline-row">
+      <strong>{{ entry.display_time }} · {{ entry.activity_name }}</strong>
+      <span>{{ entry.energy_before }} → {{ entry.energy_after }}</span>
+      <div class="energy-bar" role="img" aria-label="{{ entry.energy_after }}/100">
+        <div style="width: {{ entry.energy_after }}%"></div>
+      </div>
+    </div>
+  {% endfor %}
+  {% if not entries and energy is none %}
+    <p class="subtle">{{ t('no_recorded') }}</p>
+  {% endif %}
+</section>
+{% endblock %}

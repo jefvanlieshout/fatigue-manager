@@ -62,3 +62,19 @@ For a code rollback, inspect git log, checkout previous known-good commit, re-in
 ## Security
 
 Single-user app for private network use. Session cookies are HTTP-compatible initially (LAN only); prefer HTTPS with secure cookies. Password is scrypt-hashed, sessions signed and CSRF-protected. Built-in IP-based login throttling is best-effort and not a substitute for a firewall. Store exports securely. No health-related data in GitHub.
+
+## v0.2.0 planner upgrade
+
+This release migrates SQLite user_version 1 → 2 when the service starts. Existing entries remain intact; new tables hold day-by-day starting energy and planned activities. Use the normal manual update command **inside the LXC** as root:
+
+    cd /opt/fatigue-manager
+    bash scripts/backup.sh
+    bash scripts/update.sh
+
+Before running it, copy the backup outside the container. Test after updating: login, activity entry, language switch, opening a week, daily starting energy, planning/completing an activity and the insights page.
+
+Check:
+    systemctl status fatigue-manager --no-pager
+    journalctl -u fatigue-manager -n 80 --no-pager
+
+Rollback requires both a matching source version and database backup if the schema changed. The current app remains single-user. Account isolation is a separate future security release. Never share the same password between people who need private records.

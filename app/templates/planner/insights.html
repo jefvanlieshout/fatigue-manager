@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}{{ t('insights_title') }} · {{ t('brand') }}{% endblock %}
+{% block content %}
+<div class="intro">
+  <p class="eyebrow">{{ t('insights') }}</p>
+  <h1>{{ t('insights_title') }}</h1>
+  <p class="subtle">{{ t('insights_explainer') }}</p>
+</div>
+<section class="panel">
+  <p class="subtle">{{ t('observed_only') }}</p>
+  {% if statistics %}
+  <div class="insight-list">
+    {% for stat in statistics %}
+    <article class="insight-item">
+      <div class="panel-heading">
+        <h2>{{ stat.name }}</h2>
+        <span class="status-pill">{{ stat.count }} ×</span>
+      </div>
+      <div class="insight-number {{ 'positive' if stat.median > 0 else 'negative' if stat.median < 0 else '' }}">
+        {{ '+' if stat.median > 0 else '' }}{{ stat.median }} {{ t('points') }}
+      </div>
+      <p class="subtle">{{ t('median_change') }}</p>
+      <div class="insight-summary">
+        <span>{{ t('range') }}: {{ '+' if stat.min > 0 else '' }}{{ stat.min }} → {{ '+' if stat.max > 0 else '' }}{{ stat.max }}</span>
+        <span>{{ t('sample_count') }}: {{ stat.count }}</span>
+      </div>
+      {% if stat.count < 5 %}
+      <p class="muted-small">{{ t('early_estimate') }} · {{ t('more_data') }}</p>
+      {% endif %}
+    </article>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state"><p>{{ t('no_insights') }}</p></div>
+  {% endif %}
+</section>
+{% endblock %}

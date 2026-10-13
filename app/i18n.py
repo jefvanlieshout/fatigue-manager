@@ -1,0 +1,126 @@
+"""Small, dependency-free English/Dutch translation catalog."""
+from fastapi import Request
+
+LANGUAGES = {
+    "en": {
+        "brand": "Energy Diary", "tagline": "Your energy, at your own pace.",
+        "tracker": "Add activity", "week": "Week planner", "insights": "Insights",
+        "logout": "Log out", "login": "Log in", "welcome": "Welcome back",
+        "login_hello": "Good to see you.", "login_hint": "Sign in to open your energy diary.",
+        "password": "Password", "wrong_password": "Incorrect password.",
+        "intro_label": "Simple energy tracking", "intro_title": "How is your energy?",
+        "intro_text": "Record what you did and how much energy you had before and after.",
+        "add_activity": "Add an activity", "edit_activity": "Edit activity",
+        "cancel": "Cancel", "activity_question": "What did you do?",
+        "activity_placeholder": "e.g. cooking, walking, resting",
+        "before": "Energy before", "after": "Energy after",
+        "zero": "0 · No energy", "hundred": "100 · Plenty of energy",
+        "change": "Change in energy", "used": "Energy used",
+        "restored": "Energy restored", "unchanged": "No change",
+        "time_optional": "Adjust time (optional)", "when": "When did you do this?",
+        "save_activity": "Save activity", "save_changes": "Save changes",
+        "diary": "My diary", "activities": "Activities",
+        "export": "Export CSV", "prev_day": "Previous day",
+        "next_day": "Next day", "choose_date": "Choose date", "view": "View",
+        "today": "Back to today", "edit": "Edit", "delete": "Delete",
+        "confirm_delete": "Delete this activity?", "no_activities": "No activities for this day yet.",
+        "take_time": "Take your time.", "points": "points",
+        "week_title": "Weekly planner", "week_explainer": "Track how each day starts, and plan only what feels helpful.",
+        "previous_week": "Previous week", "next_week": "Next week", "this_week": "This week",
+        "starting_energy": "Starting energy", "not_set": "Not set", "save": "Save",
+        "clear": "Clear", "open_day": "Open day", "planned": "Planned",
+        "completed": "Completed", "add_plan": "Plan activity", "no_plans": "Nothing planned",
+        "daily_title": "Day overview", "daily_intro": "Your starting energy and activities on this day.",
+        "recorded": "Recorded activities", "no_recorded": "Nothing recorded yet.",
+        "energy_timeline": "Energy timeline", "timeline_hint": "Only recorded readings are shown. Gaps are not estimated.",
+        "return_week": "Back to week", "day_energy_hint": "Your own morning energy rating (0–100). Leave empty when unknown.",
+        "activity_name": "Activity", "planned_time": "Time (optional)", "estimated_change": "Estimated change (optional)",
+        "estimated_hint": "Leave blank to use your diary's typical value, if available.",
+        "plan_save": "Save plan", "plan_edit": "Edit plan", "complete": "Mark completed",
+        "complete_hint": "Enter the actual energy before and after to finish this plan.",
+        "completion_time": "When did it happen?",
+        "delete_plan": "Remove plan", "confirm_delete_plan": "Remove this plan? Recorded activity will remain.",
+        "plan_status": "Status", "no_estimate": "Not enough data",
+        "estimate_from": "Based on {n} recordings", "manual_estimate": "Personal estimate",
+        "insights_title": "Activity insights", "insights_explainer": "See how your energy changed after repeated activities.",
+        "sample_count": "Recordings", "median_change": "Typical change", "range": "Recorded range",
+        "early_estimate": "Early pattern", "more_data": "More recordings can help show a pattern.",
+        "no_insights": "Once you record some activities, patterns will appear here.",
+        "observed_only": "These are personal observations, not predictions or medical advice.",
+        "date": "Date", "activity_deleted": "Activity removed",
+        "energy_saved": "Starting energy saved", "day": "Day", "back": "Back",
+        "planned_for": "Planned for", "plan_form_intro": "This is a plan, not an energy diary entry.",
+        "not_a_battery": "Energy scores are personal ratings, not a precise battery.",
+        "language": "Language", "navigation": "Navigation",
+        "days": ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"],
+    },
+    "nl": {
+        "brand": "Energiedagboek", "tagline": "Jouw energie, op jouw tempo.",
+        "tracker": "Activiteit toevoegen", "week": "Weekplanner", "insights": "Inzichten",
+        "logout": "Afmelden", "login": "Aanmelden", "welcome": "Welkom terug",
+        "login_hello": "Goed je te zien.", "login_hint": "Meld je aan om je energiedagboek te openen.",
+        "password": "Wachtwoord", "wrong_password": "Onjuist wachtwoord.",
+        "intro_label": "Eenvoudig energie bijhouden", "intro_title": "Hoe is je energie?",
+        "intro_text": "Schrijf op wat je deed en hoeveel energie je ervoor en erna had.",
+        "add_activity": "Activiteit toevoegen", "edit_activity": "Activiteit aanpassen",
+        "cancel": "Annuleren", "activity_question": "Wat heb je gedaan?",
+        "activity_placeholder": "Bijv. koken, wandelen of rusten",
+        "before": "Energie ervoor", "after": "Energie erna",
+        "zero": "0 · Geen energie", "hundred": "100 · Veel energie",
+        "change": "Verandering in energie", "used": "Energie verbruikt",
+        "restored": "Energie hersteld", "unchanged": "Geen verandering",
+        "time_optional": "Tijdstip aanpassen (optioneel)", "when": "Wanneer deed je dit?",
+        "save_activity": "Activiteit opslaan", "save_changes": "Wijzigingen bewaren",
+        "diary": "Mijn dagboek", "activities": "Activiteiten",
+        "export": "Exporteer CSV", "prev_day": "Vorige dag",
+        "next_day": "Volgende dag", "choose_date": "Kies een datum", "view": "Bekijk",
+        "today": "Terug naar vandaag", "edit": "Aanpassen", "delete": "Verwijderen",
+        "confirm_delete": "Deze activiteit verwijderen?", "no_activities": "Voor deze dag zijn er nog geen activiteiten.",
+        "take_time": "Neem gerust je tijd.", "points": "punten",
+        "week_title": "Weekplanner", "week_explainer": "Houd je beginenergie bij en plan alleen wat nuttig voelt.",
+        "previous_week": "Vorige week", "next_week": "Volgende week", "this_week": "Deze week",
+        "starting_energy": "Beginenergie", "not_set": "Niet ingevuld", "save": "Opslaan",
+        "clear": "Wissen", "open_day": "Open dag", "planned": "Gepland",
+        "completed": "Voltooid", "add_plan": "Activiteit plannen", "no_plans": "Niets gepland",
+        "daily_title": "Dagoverzicht", "daily_intro": "Je beginenergie en activiteiten van deze dag.",
+        "recorded": "Opgenomen activiteiten", "no_recorded": "Nog niets opgenomen.",
+        "energy_timeline": "Energietijdlijn", "timeline_hint": "Alleen gemeten waarden worden getoond. Tussenliggende tijden worden niet geschat.",
+        "return_week": "Terug naar week", "day_energy_hint": "Je eigen energieniveau bij het opstaan (0–100). Laat leeg als je het niet weet.",
+        "activity_name": "Activiteit", "planned_time": "Tijd (optioneel)", "estimated_change": "Geschatte verandering (optioneel)",
+        "estimated_hint": "Laat leeg om je gebruikelijke waarde te tonen, indien bekend.",
+        "plan_save": "Planning bewaren", "plan_edit": "Planning aanpassen", "complete": "Markeer voltooid",
+        "complete_hint": "Vul de echte energie ervoor en erna in om deze planning af te ronden.",
+        "completion_time": "Wanneer gebeurde het?",
+        "delete_plan": "Planning verwijderen", "confirm_delete_plan": "Deze planning verwijderen? Je dagboekgegevens blijven behouden.",
+        "plan_status": "Status", "no_estimate": "Nog te weinig gegevens",
+        "estimate_from": "Gebaseerd op {n} activiteiten", "manual_estimate": "Eigen schatting",
+        "insights_title": "Activiteiteninzichten", "insights_explainer": "Bekijk hoe je energie veranderde bij herhaalde activiteiten.",
+        "sample_count": "Registraties", "median_change": "Typische verandering", "range": "Waargenomen bereik",
+        "early_estimate": "Voorlopig patroon", "more_data": "Meer registraties helpen om patronen te zien.",
+        "no_insights": "Zodra je activiteiten opslaat, verschijnen hier patronen.",
+        "observed_only": "Dit zijn persoonlijke waarnemingen, geen voorspellingen of medisch advies.",
+        "date": "Datum", "activity_deleted": "Activiteit verwijderd",
+        "energy_saved": "Beginenergie opgeslagen", "day": "Dag", "back": "Terug",
+        "planned_for": "Gepland voor", "plan_form_intro": "Dit is een planning, geen dagboekactiviteit.",
+        "not_a_battery": "Energiewaarden zijn persoonlijke beoordelingen, geen exacte batterij.",
+        "language": "Taal", "navigation": "Navigatie",
+        "days": ["Maandag","Dinsdag","Woensdag","Donderdag","Vrijdag","Zaterdag","Zondag"],
+    },
+}
+
+
+def language(request: Request) -> str:
+    selected = request.cookies.get("fatigue_locale", "en")
+    return selected if selected in LANGUAGES else "en"
+
+
+def translate(lang: str, key: str, **kwargs) -> str:
+    result = LANGUAGES[lang][key]
+    if isinstance(result, str) and kwargs:
+        return result.format(**kwargs)
+    return result
+
+
+def locale_context(request: Request) -> dict:
+    lang = language(request)
+    return {"lang": lang, "t": lambda key, **kwargs: translate(lang, key, **kwargs)}

@@ -1,29 +1,45 @@
 <!doctype html>
-<html lang="nl-BE">
+<html lang="{{ lang }}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#edf5f0">
-  <title>{% block title %}Energiedagboek{% endblock %}</title>
+  <title>{% block title %}{{ t('brand') }}{% endblock %}</title>
   <link rel="stylesheet" href="/static/style.css">
   <script src="/static/app.js" defer></script>
 </head>
 <body>
-  <div class="shell">
+  <div class="shell {% block shell_class %}{% endblock %}">
     <header class="header">
-      <a class="brand" href="/" aria-label="Energiedagboek, naar vandaag">
+      <a class="brand" href="/" aria-label="{{ t('brand') }}">
         <span class="brand-mark" aria-hidden="true">✳</span>
-        <span>Energiedagboek</span>
+        <span>{{ t('brand') }}</span>
       </a>
-      {% if request.session.get("authenticated") %}
-      <form action="/logout" method="post">
-        <input type="hidden" name="token" value="{{ csrf }}">
-        <button class="button-link" type="submit">Afmelden</button>
-      </form>
-      {% endif %}
+      <div class="header-actions">
+        {% if request.session.get("authenticated") %}
+        <nav class="primary-nav" aria-label="{{ t('navigation') }}">
+          <a href="/">{{ t('tracker') }}</a>
+          <a href="/planner/week">{{ t('week') }}</a>
+          <a href="/planner/insights">{{ t('insights') }}</a>
+        </nav>
+        {% endif %}
+        <form class="lang-form" action="/language" method="post" aria-label="{{ t('language') }}">
+          <input type="hidden" name="token" value="{{ csrf }}">
+          <input type="hidden" name="return_to" value="{{ request.url.path }}">
+          <button type="submit" name="lang" value="en" class="{{ 'active-lang' if lang == 'en' else '' }}" aria-pressed="{{ 'true' if lang == 'en' else 'false' }}">EN</button>
+          <span aria-hidden="true">/</span>
+          <button type="submit" name="lang" value="nl" class="{{ 'active-lang' if lang == 'nl' else '' }}" aria-pressed="{{ 'true' if lang == 'nl' else 'false' }}">NL</button>
+        </form>
+        {% if request.session.get("authenticated") %}
+        <form action="/logout" method="post">
+          <input type="hidden" name="token" value="{{ csrf }}">
+          <button class="button-link" type="submit">{{ t('logout') }}</button>
+        </form>
+        {% endif %}
+      </div>
     </header>
     <main>{% block content %}{% endblock %}</main>
-    <footer>Jouw energie, op jouw tempo.</footer>
+    <footer>{{ t('tagline') }}</footer>
   </div>
 </body>
 </html>

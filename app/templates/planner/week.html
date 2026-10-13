@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}{{ t('week_title') }} · {{ t('brand') }}{% endblock %}
+{% block shell_class %}wide{% endblock %}
+{% block content %}
+<div class="intro planner-page">
+  <p class="eyebrow">{{ t('week') }}</p>
+  <h1>{{ t('week_title') }}</h1>
+  <p class="subtle">{{ t('week_explainer') }}</p>
+</div>
+<nav class="week-nav" aria-label="{{ t('week_title') }}">
+  <a href="/planner/week?week={{ previous_week }}" class="quiet-link">‹ {{ t('previous_week') }}</a>
+  <a href="/planner/week" class="quiet-link">{{ t('this_week') }}</a>
+  <a href="/planner/week?week={{ next_week }}" class="quiet-link">{{ t('next_week') }} ›</a>
+</nav>
+<div class="week-grid">
+{% for d in days %}
+<section class="panel week-day" aria-labelledby="day-{{ d.date }}">
+  <div class="week-day-top">
+    <div class="eyebrow" id="day-{{ d.date }}">{{ t('days')[d.weekday] }}</div>
+    <strong>{{ d.date[8:] }}-{{ d.date[5:7] }}</strong>
+  </div>
+  <form class="daily-energy-form" action="/planner/energy" method="post">
+    <input type="hidden" name="token" value="{{ csrf }}">
+    <input type="hidden" name="day" value="{{ d.date }}">
+    <input type="hidden" name="view" value="week">
+    <label for="energy-{{ d.date }}">{{ t('starting_energy') }}</label>
+    <div class="number-action">
+      <input id="energy-{{ d.date }}" name="starting_energy" type="number" inputmode="numeric"
+             min="0" max="100" step="1" placeholder="—"
+             value="{{ d.energy if d.energy is not none else '' }}"
+             aria-label="{{ t('starting_energy') }}: {{ d.date }}">
+      <span class="muted-small">/100</span>
+      <button class="small-save" type="submit">{{ t('save') }}</button>
+    </div>
+  </form>
+  <div class="day-activities">
+    {% for entry in d.records %}
+      <div class="day-mini-entry">
+        <span>{{ entry.activity_name }}</span>
+        <strong class="{{ 'negative' if entry.delta < 0 else 'positive' if entry.delta > 0 else '' }}">{{ '+' if entry.delta > 0 else '' }}{{ entry.delta }}</strong>
+      </div>
+    {% endfor %}
+    {% for plan in d.plans %}
+      <div class="day-mini-entry planned-entry">
+        <span><span class="planned-dot" aria-hidden="true"></span>{{ plan.activity_name }}</span>
+        {% if plan.status == 'completed' %}<small>✓</small>
+        {% elif plan.suggested is not none %}
+        <small>~{{ '+' if plan.suggested > 0 else '' }}{{ plan.suggested }}</small>
+        {% else %}<small>○</small>{% endif %}
+      </div>
+    {% endfor %}
+    {% if not d.records and not d.plans %}
+      <p class="muted-small">{{ t('no_plans') }}</p>
+    {% endif %}
+  </div>
+  <a href="/planner/day?day={{ d.date }}" class="day-open">{{ t('open_day') }} →</a>
+</section>
+{% endfor %}
+</div>
+<section class="planner-note">
+  <p><strong>{{ t('not_a_battery') }}</strong> {{ t('observed_only') }}</p>
+</section>
+{% endblock %}

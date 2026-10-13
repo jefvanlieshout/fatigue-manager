@@ -1,16 +1,16 @@
 {% extends "base.html" %}
-{% block title %}Aanmelden · Energiedagboek{% endblock %}
+{% block title %}{{ t('login') }} · {{ t('brand') }}{% endblock %}
 {% block content %}
 <section class="panel login-panel">
-  <p class="eyebrow">Welkom terug</p>
-  <h1>Goed je te zien.</h1>
-  <p class="subtle">Meld je aan om je energiedagboek te openen.</p>
+  <p class="eyebrow">{{ t('welcome') }}</p>
+  <h1>{{ t('login_hello') }}</h1>
+  <p class="subtle">{{ t('login_hint') }}</p>
   <form action="/login" method="post" class="stack">
     <input type="hidden" name="token" value="{{ csrf }}">
-    <label for="password">Wachtwoord</label>
+    <label for="password">{{ t('password') }}</label>
     <input id="password" name="password" type="password" autocomplete="current-password" required autofocus>
     {% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
-    <button class="primary" type="submit">Aanmelden</button>
+    <button class="primary" type="submit">{{ t('login') }}</button>
   </form>
 </section>
 {% endblock %}
