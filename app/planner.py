@@ -147,6 +147,10 @@ def week_data(selected: date) -> tuple[date, list[dict]]:
         if key in by_day:
             by_day[key]["records"].append({
                 "activity_name": record["activity_name"],
+                "id": record["id"],
+                "display_time": local_time(record["occurred_at"]).strftime("%H:%M"),
+                "before": record["energy_before"],
+                "after": record["energy_after"],
                 "delta": record["energy_after"] - record["energy_before"],
             })
     for plan in plans:
@@ -161,6 +165,44 @@ def week_data(selected: date) -> tuple[date, list[dict]]:
         summary["estimate_count"] = stats_for_name["count"] if stats_for_name else 0
         by_day[plan["scheduled_day"]]["plans"].append(summary)
     return monday, days
+
+
+def calendar_slot(time_text: str) -> str:
+    """Round down to a 30-minute display slot; preserve the actual event time."""
+    hour, minute = (int(part) for part in time_text.split(":"))
+    return f"{hour:02d}:{(minute // 30) * 30:02d}"
+
+
+def calendar_week(days: list[dict]) -> tuple[list[str], list[dict]]:
+    """Arrange existing plans and real diary entries on a 7x48 timetable.
+
+    No writes, date changes, energy assumptions or duplicate completion records.
+    Untimed plans are kept separately rather than assigned a fictional hour.
+    """
+    slots = [f"{hour:02d}:{minute:02d}" for hour in range(24) for minute in (0, 30)]
+    for day in days:
+        day["slots"] = {slot: [] for slot in slots}
+        day["untimed"] = []
+        for entry in day["records"]:
+            day["slots"][calendar_slot(entry["display_time"])].append({
+                "kind": "recorded", "name": entry["activity_name"],
+                "id": entry["id"], "time": entry["display_time"],
+                "delta": entry["delta"],
+                "before": entry["before"], "after": entry["after"],
+            })
+        for plan in day["plans"]:
+            event = {
+                "kind": "planned", "name": plan["activity_name"],
+                "id": plan["id"], "time": plan["scheduled_time"],
+                "delta": plan["suggested"],
+            }
+            if plan["scheduled_time"]:
+                day["slots"][calendar_slot(plan["scheduled_time"])].append(event)
+            else:
+                day["untimed"].append(event)
+        for events in day["slots"].values():
+            events.sort(key=lambda event: (event["time"], event["kind"]))
+    return slots, days
 
 
 def get_plan(plan_id: int) -> dict:
@@ -180,10 +222,12 @@ def week_page(request: Request, week: str | None = None):
     if response := require_login(request):
         return response
     monday, days = week_data(parsed_day(week))
+    slots, days = calendar_week(days)
     return templates.TemplateResponse(
         request=request, name="planner/week.html",
         context={
             "csrf": csrf(request), "monday": monday.isoformat(), "days": days,
+            "slots": slots,
             "previous_week": (monday - timedelta(days=7)).isoformat(),
             "next_week": (monday + timedelta(days=7)).isoformat(),
         },
@@ -191,7 +235,7 @@ def week_page(request: Request, week: str | None = None):
 
 
 @router.get("/day")
-def day_page(request: Request, day: str | None = None, edit_plan: int | None = None):
+def day_page(request: Request, day: str | None = None, edit_plan: int | None = None, time: str | None = None):
     if response := require_login(request):
         return response
     date_value = parsed_day(day)
@@ -218,6 +262,7 @@ def day_page(request: Request, day: str | None = None, edit_plan: int | None = N
             "csrf": csrf(request), "day": key, "energy": row["starting_energy"] if row else None,
             "plans": plans, "entries": list(reversed(activity_rows(date_value))),
             "editing": editing, "now_time": datetime.now(TZ).strftime("%Y-%m-%dT%H:%M"),
+            "selected_time": clean_time(time) if time is not None else None,
         },
     )
 
@@ -256,7 +301,8 @@ def save_energy(
 def create_plan(
     request: Request,
     day: str = Form(...), activity_name: str = Form(...),
-    planned_time: str = Form(""), expected_delta: str = Form(""), token: str = Form(...),
+    planned_time: str = Form(""), expected_delta: str = Form(""),
+    view: str = Form("day"), token: str = Form(...),
 ):
     if response := require_login(request):
         return response
@@ -269,7 +315,7 @@ def create_plan(
             (selected.isoformat(), clean_time(planned_time), clean_name(activity_name),
              clean_delta(expected_delta), now_utc()),
         )
-    return RedirectResponse(destination(selected.isoformat()), status_code=303)
+    return RedirectResponse(destination(selected.isoformat(), "week" if view == "week" else "day"), status_code=303)
 
 
 @router.post("/plans/{plan_id}/edit")

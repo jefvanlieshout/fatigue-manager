@@ -5,59 +5,118 @@
 <div class="intro planner-page">
   <p class="eyebrow">{{ t('week') }}</p>
   <h1>{{ t('week_title') }}</h1>
-  <p class="subtle">{{ t('week_explainer') }}</p>
+  <p class="subtle">{{ t('calendar_help') }}</p>
 </div>
 <nav class="week-nav" aria-label="{{ t('week_title') }}">
   <a href="/planner/week?week={{ previous_week }}" class="quiet-link">‹ {{ t('previous_week') }}</a>
   <a href="/planner/week" class="quiet-link">{{ t('this_week') }}</a>
   <a href="/planner/week?week={{ next_week }}" class="quiet-link">{{ t('next_week') }} ›</a>
 </nav>
-<div class="week-grid">
-{% for d in days %}
-<section class="panel week-day" aria-labelledby="day-{{ d.date }}">
-  <div class="week-day-top">
-    <div class="eyebrow" id="day-{{ d.date }}">{{ t('days')[d.weekday] }}</div>
-    <strong>{{ d.date[8:] }}-{{ d.date[5:7] }}</strong>
-  </div>
-  <form class="daily-energy-form" action="/planner/energy" method="post">
-    <input type="hidden" name="token" value="{{ csrf }}">
-    <input type="hidden" name="day" value="{{ d.date }}">
-    <input type="hidden" name="view" value="week">
-    <label for="energy-{{ d.date }}">{{ t('starting_energy') }}</label>
-    <div class="number-action">
-      <input id="energy-{{ d.date }}" name="starting_energy" type="number" inputmode="numeric"
-             min="0" max="100" step="1" placeholder="—"
-             value="{{ d.energy if d.energy is not none else '' }}"
-             aria-label="{{ t('starting_energy') }}: {{ d.date }}">
-      <span class="muted-small">/100</span>
-      <button class="small-save" type="submit">{{ t('save') }}</button>
-    </div>
-  </form>
-  <div class="day-activities">
-    {% for entry in d.records %}
-      <div class="day-mini-entry">
-        <span>{{ entry.activity_name }}</span>
-        <strong class="{{ 'negative' if entry.delta < 0 else 'positive' if entry.delta > 0 else '' }}">{{ '+' if entry.delta > 0 else '' }}{{ entry.delta }}</strong>
-      </div>
-    {% endfor %}
-    {% for plan in d.plans %}
-      <div class="day-mini-entry planned-entry">
-        <span><span class="planned-dot" aria-hidden="true"></span>{{ plan.activity_name }}</span>
-        {% if plan.status == 'completed' %}<small>✓</small>
-        {% elif plan.suggested is not none %}
-        <small>~{{ '+' if plan.suggested > 0 else '' }}{{ plan.suggested }}</small>
-        {% else %}<small>○</small>{% endif %}
-      </div>
-    {% endfor %}
-    {% if not d.records and not d.plans %}
-      <p class="muted-small">{{ t('no_plans') }}</p>
-    {% endif %}
-  </div>
-  <a href="/planner/day?day={{ d.date }}" class="day-open">{{ t('open_day') }} →</a>
-</section>
-{% endfor %}
+<div class="calendar-legend" aria-label="{{ t('calendar_legend') }}">
+  <span><i class="legend-dot planned" aria-hidden="true"></i>{{ t('planned') }}</span>
+  <span><i class="legend-dot recorded" aria-hidden="true"></i>{{ t('completed') }}</span>
+  <span class="calendar-swipe">{{ t('calendar_swipe') }}</span>
 </div>
-<section class="planner-note">
-  <p><strong>{{ t('not_a_battery') }}</strong> {{ t('observed_only') }}</p>
-</section>
+<div class="calendar-scroll" id="calendar-scroll" data-week="{{ monday }}" tabindex="0" aria-label="{{ t('calendar_scroll_label') }}">
+  <table class="calendar-table">
+    <thead>
+      <tr>
+        <th scope="col" class="calendar-corner">{{ t('calendar_time') }}</th>
+        {% for d in days %}
+        <th scope="col" class="calendar-day-head">
+          <a class="calendar-day-link" href="/planner/day?day={{ d.date }}">
+            <strong>{{ t('days')[d.weekday] }}</strong><span>{{ d.date[8:] }}/{{ d.date[5:7] }}</span>
+          </a>
+          <form method="post" action="/planner/energy" class="calendar-energy">
+            <input type="hidden" name="token" value="{{ csrf }}">
+            <input type="hidden" name="day" value="{{ d.date }}">
+            <input type="hidden" name="view" value="week">
+            <label for="energy-{{ d.date }}">{{ t('starting_energy') }}</label>
+            <div class="calendar-energy-controls">
+              <input id="energy-{{ d.date }}" type="number" name="starting_energy"
+                min="0" max="100" step="1" inputmode="numeric" placeholder="—"
+                value="{{ d.energy if d.energy is not none else '' }}"
+                aria-label="{{ t('starting_energy') }} {{ d.date }}">
+              <span aria-hidden="true">/100</span>
+              <button type="submit" class="small-save">{{ t('save') }}</button>
+            </div>
+          </form>
+          {% if d.untimed %}
+          <div class="calendar-untimed">
+            <span class="calendar-untimed-label">{{ t('without_time') }}</span>
+            {% for event in d.untimed %}
+            <a href="/planner/day?day={{ d.date }}&amp;edit_plan={{ event.id }}">{{ event.name }}</a>
+            {% endfor %}
+          </div>
+          {% endif %}
+        </th>
+        {% endfor %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for slot in slots %}
+      <tr class="{{ 'calendar-whole-hour' if slot[3:] == '00' else 'calendar-half-hour' }}" {% if slot == '07:00' %}data-initial-scroll="true"{% endif %}>
+        <th scope="row" class="calendar-hour">{{ slot }}</th>
+        {% for d in days %}
+        <td class="calendar-cell">
+          <a href="/planner/day?day={{ d.date }}&amp;time={{ slot }}"
+            class="calendar-slot-add"
+            data-day="{{ d.date }}" data-time="{{ slot }}"
+            aria-label="{{ t('plan_at', day=d.date, time=slot) }}"
+            title="{{ t('plan_at', day=d.date, time=slot) }}">
+            <span aria-hidden="true">+</span>
+          </a>
+          {% for event in d.slots[slot] %}
+          <a class="calendar-event {{ 'event-completed' if event.kind == 'recorded' else 'event-planned' }}"
+            href="{{ '/entries/' ~ event.id ~ '/edit' if event.kind == 'recorded' else '/planner/day?day=' ~ d.date ~ '&edit_plan=' ~ event.id }}"
+            title="{{ event.name }} · {{ event.time }}">
+            <span class="calendar-event-title">{{ event.name }}</span>
+            <small>{{ event.time }}{% if event.delta is not none %} · {{ '+' if event.delta > 0 else '' }}{{ event.delta }}{% endif %}</small>
+          </a>
+          {% endfor %}
+        </td>
+        {% endfor %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<p class="planner-note">{{ t('not_a_battery') }} {{ t('observed_only') }}</p>
+
+<dialog id="quick-plan" class="calendar-dialog" aria-labelledby="quick-plan-title">
+  <div class="calendar-dialog-heading">
+    <h2 id="quick-plan-title">{{ t('add_plan') }}</h2>
+    <button type="button" class="calendar-close" data-close-plan aria-label="{{ t('cancel') }}">×</button>
+  </div>
+  <p class="subtle">{{ t('plan_form_intro') }}</p>
+  <form action="/planner/plans" method="post" class="entry-form" id="quick-plan-form">
+    <input type="hidden" name="token" value="{{ csrf }}">
+    <input type="hidden" name="view" value="week">
+    <div class="form-pair">
+      <div class="field">
+        <label for="quick-plan-day">{{ t('date') }}</label>
+        <input id="quick-plan-day" name="day" type="date" required>
+      </div>
+      <div class="field">
+        <label for="quick-plan-time">{{ t('planned_time') }}</label>
+        <input id="quick-plan-time" name="planned_time" type="time" step="300" required>
+      </div>
+    </div>
+    <div class="field">
+      <label for="quick-plan-name">{{ t('activity_name') }}</label>
+      <input id="quick-plan-name" name="activity_name" type="text" maxlength="120"
+        placeholder="{{ t('activity_placeholder') }}" required>
+    </div>
+    <details class="optional">
+      <summary>{{ t('estimate_optional') }}</summary>
+      <div class="field">
+        <label for="quick-plan-delta">{{ t('estimated_change') }}</label>
+        <input id="quick-plan-delta" name="expected_delta" type="number" min="-100" max="100" step="1"
+          placeholder="—">
+        <p class="muted-small">{{ t('estimated_hint') }}</p>
+      </div>
+    </details>
+    <button type="submit" class="primary">{{ t('plan_save') }}</button>
+  </form>
+</dialog>
 {% endblock %}

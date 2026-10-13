@@ -1,6 +1,6 @@
 # Fatigue Manager — Handover
 
-Updated: 2026-10-13 (planner release v0.2.0 prepared). Repository: https://github.com/jefvanlieshout/fatigue-manager
+Updated: 2026-10-13 (v0.2.1 weekly timetable prepared). Repository: https://github.com/jefvanlieshout/fatigue-manager
 
 ## Background and core requirement
 
@@ -68,3 +68,20 @@ Implementation is committed in v0.2.0, but must still be **validated on the owne
 - Tests added in `tests/test_planner.py` for migration, zero vs missing morning energy, plan completion, cross-site request safeguards, translations, week starts and analytics.
 - For upgrade: existing `scripts/update.sh` takes a SQLite backup, updates Git checkout, and restarts the service (migration at startup). **Copy a verified backup outside the LXC** before updating. Run local tests and verify data after reboot.
 - On real device, evaluate screen spacing and whether the 7 daily energy inputs are easy to use. Do not clutter the simple tracker.
+
+## v0.2.1 timetable implementation — 2026-10-13
+
+Request: Show the COMPLETE week in a calendar, days across the top and hours down the left, and let a user choose a day/time to plan an activity.
+
+Changes:
+- Week view now uses a 7-column table with 48 half-hour slots per day, covering every hour (00:00 to 23:30).
+- Each day header shows editable starting energy (0–100; blank means missing), plus any untimed planned activities.
+- The timetable shows existing diary entries at their recorded local time and plans at their scheduled time. Grouping into 30-minute slots is visual ONLY; actual times remain unchanged. Completed plans are represented once via their diary record.
+- Click an empty or available time slot to open a native, accessible dialog prefilled with date/time; enter an activity name and optionally an estimated energy change. A non-JavaScript fallback goes to the normal day page with its date/time preselected.
+- Python: app/planner.py has calendar_slot(), calendar_week(), recorded timestamps, selected-time fallback, and a view=week return path on the plan creation route.
+- UI: app/templates/planner/week.html; app/templates/planner/day.html, app/static/app.js and style.css.
+- English/Dutch: new calendar translation labels in app/i18n.py.
+- Responsive: all seven columns remain present; smaller screens scroll horizontally, hours scroll vertically. Sticky day/time headers; initially scroll near 07:00.
+- Tests: tests/test_week_timetable.py checks days/hours, slot fallback, activity placement, untimed items, login requirements and saved daily energy.
+- SQLite remains version 2. No migration, new service, public data exposure or GitHub Actions. Existing single-user login remains in place. Different private accounts are still NOT available.
+- For deployment into existing Fatigue Manager LXC: copy a backup outside the LXC, run bash scripts/update.sh in /opt/fatigue-manager, then run Python pytest locally and smoke-test the planner on phone/desktop. The assistant has not accessed the running LXC, so live deployment/test status remains unconfirmed.

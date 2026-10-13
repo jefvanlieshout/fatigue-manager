@@ -43,7 +43,7 @@
       <div class="field">
         <label for="plan-time">{{ t('planned_time') }}</label>
         <input id="plan-time" name="planned_time" type="time"
-               value="{{ editing.scheduled_time if editing and editing.scheduled_time else '' }}">
+               value="{{ editing.scheduled_time if editing and editing.scheduled_time else selected_time or '' }}">
       </div>
       <div class="field">
         <label for="plan-delta">{{ t('estimated_change') }}</label>

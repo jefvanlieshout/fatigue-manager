@@ -2,14 +2,18 @@
 
 A small, private, mobile-first activity and energy diary (English by default, with Dutch selectable). Designed for people who want to learn what uses or restores their energy, without overwhelming app features.
 
-## Current release: v0.2 (weekly planner and insights)
+## Current release: v0.2.1 (weekly timetable and insights)
 
 - Activity name, starting energy (0–100), ending energy (0–100).
 - Immediate energy-change feedback.
 - Automatic date/time with optional editing.
 - Day-by-day diary; edit/delete entries; reuse recent activity names.
 - CSV export; local SQLite database; one password login.
-- Week planner: optional starting energy for **each day** (0–100; blank means unknown).
+- Week calendar with all seven days across the top and all 24 hours along the left, using 30-minute time slots.
+- Click a slot to open a small activity-planning form with the chosen date and time filled in.
+- Plans and recorded activities appear at their selected or actual times; untimed plans remain visible.
+- On phones, scroll horizontally to see every day and vertically to see all hours.
+- Daily starting-energy inputs (0–100) remain in the week header, with blank meaning unknown.
 - Plan activities with an optional time and estimated energy change, edit/remove plans, and mark them complete with actual readings.
 - Day view: reported energy timeline without guessing missing values.
 - Insights: case-insensitive activity grouping; median, min/max and sample count.
@@ -70,3 +74,7 @@ The app is currently **single-user**; separate private accounts are planned, not
 Before updating to v0.2, use the included update script as root: it backs up the SQLite database before the automatic v1 → v2 migration. Ensure backups are also copied outside the LXC.
 
 Do not commit .env secrets, SQLite records, backup files, or real health data to the public repository.
+
+### Calendar interaction
+
+The timetable initially scrolls near 07:00; earlier and later hours remain available. Events retain their actual timestamps, even when visually grouped into a half-hour row. A time-slot link works without JavaScript by opening the existing day form with date and time prefilled. v0.2.1 introduces no database schema change and continues to use the existing LXC, SQLite and manual GitHub updates.

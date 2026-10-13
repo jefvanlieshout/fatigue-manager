@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.2.1 (2026-10-13)
+
+- Full weekly timetable: seven days across, hours along the side, 30-minute time cells.
+- Quick-add planned activity when choosing a time slot, with a prefilled day and time.
+- Displays existing diary entries and scheduled plans at their recorded times; handles untimed plans.
+- Daily starting-energy inputs remain visible in each day header.
+- Mobile scrolling, accessible native planning dialog and a no-JavaScript fallback.
+- Local regression tests and updated docs. No schema change or GitHub Actions.
+
+
 ## v0.2.0 (2026-10-13)
 
 - Weekly planner, independent daily starting-energy entries (including 0 or unknown).
