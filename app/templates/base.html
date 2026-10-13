@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="nl-BE">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#edf5f0">
+  <title>{% block title %}Energiedagboek{% endblock %}</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="/static/app.js" defer></script>
+</head>
+<body>
+  <div class="shell">
+    <header class="header">
+      <a class="brand" href="/" aria-label="Energiedagboek, naar vandaag">
+        <span class="brand-mark" aria-hidden="true">✳</span>
+        <span>Energiedagboek</span>
+      </a>
+      {% if request.session.get("authenticated") %}
+      <form action="/logout" method="post">
+        <input type="hidden" name="token" value="{{ csrf }}">
+        <button class="button-link" type="submit">Afmelden</button>
+      </form>
+      {% endif %}
+    </header>
+    <main>{% block content %}{% endblock %}</main>
+    <footer>Jouw energie, op jouw tempo.</footer>
+  </div>
+</body>
+</html>

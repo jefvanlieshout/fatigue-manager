@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Aanmelden · Energiedagboek{% endblock %}
+{% block content %}
+<section class="panel login-panel">
+  <p class="eyebrow">Welkom terug</p>
+  <h1>Goed je te zien.</h1>
+  <p class="subtle">Meld je aan om je energiedagboek te openen.</p>
+  <form action="/login" method="post" class="stack">
+    <input type="hidden" name="token" value="{{ csrf }}">
+    <label for="password">Wachtwoord</label>
+    <input id="password" name="password" type="password" autocomplete="current-password" required autofocus>
+    {% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
+    <button class="primary" type="submit">Aanmelden</button>
+  </form>
+</section>
+{% endblock %}

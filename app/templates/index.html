@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="intro">
+  <p class="eyebrow">Eenvoudig energie bijhouden</p>
+  <h1>Hoe was je energie?</h1>
+  <p class="subtle">Schrijf op wat je deed en hoeveel energie je ervoor en erna had.</p>
+</div>
+
+<section class="panel" aria-labelledby="form-heading">
+  <div class="panel-heading">
+    <h2 id="form-heading">{{ "Activiteit aanpassen" if editing else "Activiteit toevoegen" }}</h2>
+    {% if editing %}<a class="quiet-link" href="/?day={{ day }}">Annuleren</a>{% endif %}
+  </div>
+  <form class="entry-form" method="post" action="{{ '/entries/' ~ editing.id ~ '/edit' if editing else '/entries' }}">
+    <input type="hidden" name="token" value="{{ csrf }}">
+    <div class="field">
+      <label for="activity_name">Wat heb je gedaan?</label>
+      <input id="activity_name" name="activity_name" type="text" list="activity-suggestions"
+        placeholder="Bijv. koken, wandelen of rusten" maxlength="120" autocomplete="off"
+        value="{{ editing.activity_name if editing else '' }}" required autofocus>
+      <datalist id="activity-suggestions">
+        {% for suggestion in suggestions %}<option value="{{ suggestion }}"></option>{% endfor %}
+      </datalist>
+    </div>
+    <div class="energy-fields">
+      <div class="field">
+        <div class="label-row">
+          <label for="energy_before">Energie ervoor</label>
+          <output id="before_value" for="energy_before" class="energy-number">{{ editing.energy_before if editing else 70 }}</output>
+        </div>
+        <input class="energy-slider" id="energy_before" name="energy_before" type="range"
+          min="0" max="100" step="1" value="{{ editing.energy_before if editing else 70 }}">
+        <div class="scale"><span>0 · Geen energie</span><span>100 · Veel energie</span></div>
+      </div>
+      <div class="field">
+        <div class="label-row">
+          <label for="energy_after">Energie erna</label>
+          <output id="after_value" for="energy_after" class="energy-number">{{ editing.energy_after if editing else 50 }}</output>
+        </div>
+        <input class="energy-slider" id="energy_after" name="energy_after" type="range"
+          min="0" max="100" step="1" value="{{ editing.energy_after if editing else 50 }}">
+        <div class="scale"><span>0 · Geen energie</span><span>100 · Veel energie</span></div>
+      </div>
+    </div>
+    <div class="energy-result" aria-live="polite">
+      <span>Verandering in energie</span>
+      <strong id="energy_delta">−20 punten</strong>
+      <small id="energy_description">Energie verbruikt</small>
+    </div>
+    <details class="optional">
+      <summary>Tijdstip aanpassen (optioneel)</summary>
+      <div class="field date-field">
+        <label for="occurred_at">Wanneer deed je dit?</label>
+        <input id="occurred_at" name="occurred_at" type="datetime-local"
+          value="{{ default_time }}" required>
+      </div>
+    </details>
+    <button class="primary" type="submit">{{ "Wijzigingen bewaren" if editing else "Activiteit opslaan" }}</button>
+  </form>
+</section>
+
+<section class="panel history" aria-labelledby="history-heading">
+  <div class="panel-heading">
+    <div>
+      <p class="eyebrow">Mijn dagboek</p>
+      <h2 id="history-heading">Activiteiten</h2>
+    </div>
+    <a class="quiet-link" href="/export.csv">Exporteer CSV</a>
+  </div>
+  <div class="day-nav" aria-label="Kies een dag">
+    <a href="/?day={{ previous }}" aria-label="Vorige dag" class="day-arrow">‹</a>
+    <form action="/" method="get">
+      <label class="sr-only" for="day">Datum</label>
+      <input type="date" id="day" name="day" value="{{ day }}" aria-label="Kies een datum">
+      <button class="date-go" type="submit">Bekijk</button>
+    </form>
+    <a href="/?day={{ next }}" aria-label="Volgende dag" class="day-arrow">›</a>
+  </div>
+  {% if day != today %}<p class="today-link"><a href="/">Terug naar vandaag</a></p>{% endif %}
+  {% if entries %}
+    <ul class="entries">
+      {% for item in entries %}
+      <li class="entry">
+        <div class="entry-time">{{ item.display_time }}</div>
+        <div class="entry-body">
+          <strong>{{ item.activity_name }}</strong>
+          <span class="subtle">{{ item.energy_before }} → {{ item.energy_after }} punten</span>
+          <div class="entry-actions">
+            <a href="/entries/{{ item.id }}/edit">Aanpassen</a>
+            <form method="post" action="/entries/{{ item.id }}/delete" data-confirm="Deze activiteit verwijderen?">
+              <input type="hidden" name="token" value="{{ csrf }}">
+              <button class="button-link danger-link" type="submit">Verwijderen</button>
+            </form>
+          </div>
+        </div>
+        <span class="delta {{ 'positive' if item.delta > 0 else 'negative' if item.delta < 0 else 'neutral' }}">
+          {{ '+' if item.delta > 0 else '' }}{{ item.delta }}
+        </span>
+      </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <div class="empty-state">
+      <div class="empty-symbol" aria-hidden="true">☀</div>
+      <p>Voor deze dag zijn er nog geen activiteiten.</p>
+      <span>Neem gerust je tijd.</span>
+    </div>
+  {% endif %}
+</section>
