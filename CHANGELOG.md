@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.2.6 — 2026-10-14
+
+- Restored the editable starting-energy input directly beneath each weekday/date in the week calendar.
+- Show only a 🔋 icon and numeric 0–100 input per day; press Enter to save, no visible Save button or helper text.
+- Removed the separate energy dropdown and its browser-state code; compact layout on phones.
+- Fixed the calendar-settings dialog being embedded in the page-title template block.
+- Updated tests, docs and static asset cache version. No database migration or GitHub Actions.
+
+
 ## v0.2.5 — 2026-10-13
 
 - Unified activity-name suggestions from completed, planned and recurring activities, with a single searchable picker.

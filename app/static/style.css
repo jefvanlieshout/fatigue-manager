@@ -332,14 +332,6 @@ footer { text-align: center; color: var(--muted); font-size: .78rem; padding: 14
 .settings-gear{border:0;background:transparent;font-size:1.3rem;cursor:pointer;color:var(--green);
   padding:5px 8px;min-height:38px;min-width:38px;border-radius:9px}
 .settings-gear:hover,.settings-gear:focus-visible{background:#e0eee4}
-.energy-drawer{margin:0 0 8px;border:1px solid var(--line);border-radius:10px;background:white}
-.energy-drawer summary{padding:6px 11px;cursor:pointer;font-size:.87rem;font-weight:700}
-.energy-day-strip{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px;padding:9px}
-.energy-day{min-width:0;border:1px solid var(--line);border-radius:8px;padding:5px;display:flex;flex-direction:column;gap:2px}
-.energy-day label{font-size:.74rem;color:var(--muted)}
-.energy-inline{display:flex;align-items:center;gap:2px}
-.energy-inline span{font-size:.83rem}
-.energy-day input[type=number]{width:100%;min-width:0;padding:4px;border-radius:6px;border:1px solid #cbdcd0;font:inherit;font-size:.88rem}
 .visually-hidden{position:absolute;clip:rect(0,0,0,0);height:1px;width:1px;overflow:hidden;white-space:nowrap}
 .week-nav{align-items:center}
 .print-week-link{text-decoration:none;color:var(--green);font-size:.84rem;font-weight:700}
@@ -365,9 +357,6 @@ footer { text-align: center; color: var(--muted); font-size: .78rem; padding: 14
 .calendar-event.energy-unknown{background:#eff2f2}
 @media(max-width:750px){
   .shell.wide .planner-page .subtle,.shell.wide .planner-page .eyebrow{display:none}
-  .shell.wide .energy-drawer summary{font-size:.75rem;padding:5px 8px}
-  .shell.wide .energy-day-strip{display:flex;overflow-x:auto;gap:5px}
-  .shell.wide .energy-day{flex:0 0 82px}
   .shell.wide .week-nav{margin:0 0 5px;gap:5px}
   .shell.wide .week-nav a{font-size:.69rem}
   .shell.wide .print-week-link{font-size:.69rem}
@@ -375,6 +364,27 @@ footer { text-align: center; color: var(--muted); font-size: .78rem; padding: 14
   .settings-gear{min-width:32px;min-height:32px;padding:1px;font-size:1.18rem}
 }
 @media print{
- .shell.wide .header,.shell.wide .week-nav,.shell.wide .energy-drawer,
+ .shell.wide .header,.shell.wide .week-nav,
  .shell.wide .calendar-legend,.shell.wide .planner-note{display:none!important}
+}
+
+/* v0.2.6 — a single, compact per-day energy input below each weekday heading. */
+.calendar-energy-inline{
+  display:flex;align-items:center;justify-content:center;gap:5px;
+  margin:4px 0 0;width:100%;min-width:0
+}
+.calendar-energy-inline .battery-symbol{font-size:.95rem;line-height:1;flex:0 0 auto}
+.calendar-energy-inline input[type="number"]{
+  width:58px;max-width:calc(100% - 28px);min-width:0;
+  height:34px;margin:0;padding:4px 5px;
+  text-align:center;font:inherit;font-size:.9rem;font-variant-numeric:tabular-nums;
+  border:1px solid #cbdcd0;border-radius:8px;background:white;color:var(--ink)
+}
+.calendar-energy-inline input:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+@media(max-width:750px){
+  .shell.wide .calendar-energy-inline{gap:3px;margin-top:3px}
+  .shell.wide .calendar-energy-inline .battery-symbol{font-size:.8rem}
+  .shell.wide .calendar-energy-inline input[type="number"]{
+    width:51px;height:30px;padding:3px;font-size:.81rem
+  }
 }

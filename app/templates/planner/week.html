@@ -1,41 +1,6 @@
 {% extends "base.html" %}
 {% block title %}{{ t('week_title') }} · {{ t('brand') }}
-<dialog class="calendar-dialog preferences-dialog" id="calendar-settings" aria-labelledby="settings-title">
-  <div class="calendar-dialog-heading">
-    <h2 id="settings-title">{{ t('calendar_settings') }}</h2>
-    <button type="button" class="calendar-close" data-close-settings aria-label="{{ t('cancel') }}">×</button>
-  </div>
-  <form method="post" action="/planner/settings" class="settings-form">
-    <input type="hidden" name="token" value="{{ csrf }}">
-    <input type="hidden" name="week" value="{{ monday }}">
-    <fieldset>
-      <legend>{{ t('energy_colors') }}</legend>
-      <p class="muted-small">{{ t('energy_color_help') }}</p>
-      <div class="settings-grid">
-        <label>{{ t('low_energy_range') }} <input type="number" name="low_max" min="0" max="99" value="{{ prefs.low_max }}" required></label>
-        <label>{{ t('low_color') }} <input type="color" name="low_color" value="{{ prefs.low_color }}"></label>
-        <label>{{ t('medium_energy_range') }} <input type="number" name="medium_max" min="1" max="100" value="{{ prefs.medium_max }}" required></label>
-        <label>{{ t('medium_color') }} <input type="color" name="medium_color" value="{{ prefs.medium_color }}"></label>
-        <label>{{ t('high_color') }} <input type="color" name="high_color" value="{{ prefs.high_color }}"></label>
-      </div>
-    </fieldset>
-    <fieldset>
-      <legend>{{ t('visible_hours') }}</legend>
-      <div class="settings-grid">
-        <label>{{ t('starts_at') }} <input type="number" name="day_start" min="0" max="23" value="{{ prefs.day_start }}" required></label>
-        <label>{{ t('ends_at') }} <input type="number" name="day_end" min="1" max="24" value="{{ prefs.day_end }}" required></label>
-      </div>
-    </fieldset>
-    <fieldset>
-      <legend>{{ t('print_hours') }}</legend>
-      <div class="settings-grid">
-        <label>{{ t('starts_at') }} <input type="number" name="print_start" min="0" max="23" value="{{ prefs.print_start }}" required></label>
-        <label>{{ t('ends_at') }} <input type="number" name="print_end" min="1" max="24" value="{{ prefs.print_end }}" required></label>
-      </div>
-    </fieldset>
-    <button class="primary" type="submit">{{ t('save_settings') }}</button>
-  </form>
-</dialog>
+
 {% endblock %}
 {% block shell_class %}wide{% endblock %}
 {% block content %}
@@ -50,25 +15,7 @@
   <a href="/planner/week?week={{ next_week }}" class="quiet-link">{{ t('next_week') }} ›</a>
   <a class="quiet-link print-week-link" href="/planner/print?week={{ monday }}" target="_blank" rel="noopener">🖨 {{ t('print_week') }}</a>
 </nav>
-<details class="energy-drawer" id="energy-drawer">
-  <summary><span aria-hidden="true">🔋</span> {{ t('starting_energy') }} <span class="muted-small">· {{ t('enter_to_save') }}</span></summary>
-  <div class="energy-day-strip">
-  {% for d in days %}
-    <form action="/planner/energy" method="post" class="energy-day">
-      <input type="hidden" name="token" value="{{ csrf }}">
-      <input type="hidden" name="day" value="{{ d.date }}">
-      <input type="hidden" name="view" value="week">
-      <label for="energy-{{ d.date }}">{{ t('days')[d.weekday][:3] }} {{ d.date[8:] }}</label>
-      <div class="energy-inline"><span aria-hidden="true">🔋</span>
-        <input id="energy-{{ d.date }}" type="number" name="starting_energy"
-          min="0" max="100" inputmode="numeric" value="{{ d.energy if d.energy is not none else 0 }}"
-          aria-label="{{ t('starting_energy') }} {{ d.date }}">
-      </div>
-      <button type="submit" class="visually-hidden">{{ t('save') }}</button>
-    </form>
-  {% endfor %}
-  </div>
-</details>
+
 <div class="calendar-legend" aria-label="{{ t('calendar_legend') }}">
   <span><i class="legend-dot planned" aria-hidden="true"></i>{{ t('planned') }}</span>
   <span><i class="legend-dot recorded" aria-hidden="true"></i>{{ t('completed') }}</span>
@@ -87,6 +34,17 @@
           <a class="calendar-day-link" href="/planner/day?day={{ d.date }}">
             <strong>{{ t('days')[d.weekday] }}</strong><span>{{ d.date[8:] }}/{{ d.date[5:7] }}</span>
           </a>
+          <form method="post" action="/planner/energy" class="calendar-energy-inline">
+            <input type="hidden" name="token" value="{{ csrf }}">
+            <input type="hidden" name="day" value="{{ d.date }}">
+            <input type="hidden" name="view" value="week">
+            <span aria-hidden="true" class="battery-symbol">🔋</span>
+            <input id="energy-{{ d.date }}" name="starting_energy"
+              type="number" min="0" max="100" step="1" inputmode="numeric" required
+              value="{{ d.energy if d.energy is not none else 0 }}"
+              aria-label="{{ t('starting_energy') }} · {{ t('days')[d.weekday] }} {{ d.date }}">
+            <button type="submit" class="visually-hidden" tabindex="-1">{{ t('save') }}</button>
+          </form>
           {% if d.untimed %}
           <div class="calendar-untimed">
             <span class="calendar-untimed-label">{{ t('without_time') }}</span>
@@ -242,6 +200,42 @@
       <button type="submit" name="operation" value="delete_one" class="calendar-danger" id="quick-delete-one" formnovalidate>{{ t('delete') }}</button>
       <button type="submit" name="operation" value="delete_series" class="calendar-danger" id="quick-delete-series" formnovalidate hidden>{{ t('delete_entire_series') }}</button>
     </div>
+  </form>
+</dialog>
+<dialog class="calendar-dialog preferences-dialog" id="calendar-settings" aria-labelledby="settings-title">
+  <div class="calendar-dialog-heading">
+    <h2 id="settings-title">{{ t('calendar_settings') }}</h2>
+    <button type="button" class="calendar-close" data-close-settings aria-label="{{ t('cancel') }}">×</button>
+  </div>
+  <form method="post" action="/planner/settings" class="settings-form">
+    <input type="hidden" name="token" value="{{ csrf }}">
+    <input type="hidden" name="week" value="{{ monday }}">
+    <fieldset>
+      <legend>{{ t('energy_colors') }}</legend>
+      <p class="muted-small">{{ t('energy_color_help') }}</p>
+      <div class="settings-grid">
+        <label>{{ t('low_energy_range') }} <input type="number" name="low_max" min="0" max="99" value="{{ prefs.low_max }}" required></label>
+        <label>{{ t('low_color') }} <input type="color" name="low_color" value="{{ prefs.low_color }}"></label>
+        <label>{{ t('medium_energy_range') }} <input type="number" name="medium_max" min="1" max="100" value="{{ prefs.medium_max }}" required></label>
+        <label>{{ t('medium_color') }} <input type="color" name="medium_color" value="{{ prefs.medium_color }}"></label>
+        <label>{{ t('high_color') }} <input type="color" name="high_color" value="{{ prefs.high_color }}"></label>
+      </div>
+    </fieldset>
+    <fieldset>
+      <legend>{{ t('visible_hours') }}</legend>
+      <div class="settings-grid">
+        <label>{{ t('starts_at') }} <input type="number" name="day_start" min="0" max="23" value="{{ prefs.day_start }}" required></label>
+        <label>{{ t('ends_at') }} <input type="number" name="day_end" min="1" max="24" value="{{ prefs.day_end }}" required></label>
+      </div>
+    </fieldset>
+    <fieldset>
+      <legend>{{ t('print_hours') }}</legend>
+      <div class="settings-grid">
+        <label>{{ t('starts_at') }} <input type="number" name="print_start" min="0" max="23" value="{{ prefs.print_start }}" required></label>
+        <label>{{ t('ends_at') }} <input type="number" name="print_end" min="1" max="24" value="{{ prefs.print_end }}" required></label>
+      </div>
+    </fieldset>
+    <button class="primary" type="submit">{{ t('save_settings') }}</button>
   </form>
 </dialog>
 {% endblock %}

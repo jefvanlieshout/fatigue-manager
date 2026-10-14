@@ -111,9 +111,19 @@ def test_ui_markers_gear_and_no_confirm(tmp_path):
     try:
         html = client.get("/planner/week?week=2026-10-13").text
         assert 'id="calendar-settings-button"' in html
-        assert 'id="energy-drawer"' in html
-        assert 'class="energy-inline"' in html
+        assert 'id="energy-drawer"' not in html
+        assert html.count('class="calendar-energy-inline"') == 7
+        assert html.count('class="battery-symbol"') == 7
         assert html.count('name="starting_energy"') == 7
+        assert html.count('class="visually-hidden" tabindex="-1"') == 7
+        # Each value sits directly beneath the correct day name, not in a dropdown.
+        import re
+        headers = re.findall(r'<th scope="col" class="calendar-day-head".*?</th>', html, flags=re.S)
+        assert len(headers) == 7
+        for header in headers:
+            assert '<form method="post" action="/planner/energy"' in header
+            assert '<span aria-hidden="true" class="battery-symbol">🔋</span>' in header
+            assert 'name="starting_energy"' in header
         assert "Default 0" not in html
         assert 'href="/planner/insights"' not in html
     finally:

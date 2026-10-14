@@ -1,6 +1,6 @@
 # Fatigue Manager — Handover
 
-Updated: 2026-10-13 — v0.2.5 calendar settings, printing and activity lookup. Repository: https://github.com/jefvanlieshout/fatigue-manager
+Updated: 2026-10-14 — v0.2.6 compact weekday energy controls. Repository: https://github.com/jefvanlieshout/fatigue-manager
 
 ## Background and core requirement
 
@@ -166,3 +166,18 @@ Implementation:
 - NO GitHub Actions, no additional LXC, no credentials or health records committed. Changes are made in public GitHub code only; actual Proxmox server was NOT modified here.
 
 Deploy: backup SQLite outside LXC first, then inside /opt/fatigue-manager as root run `bash scripts/update.sh`. Startup migration should reach PRAGMA user_version 5. Check local pytest and test on phone and laptop, especially the red-line rollover at XX:29→XX:30 and print margins/print scaling on the actual printer. If rollback is needed, restore the pre-update matching database backup and source revision. 
+
+## v0.2.6 — Battery input directly below each day, no drawer (2026-10-14)
+
+The user explicitly asked to remove the separate starting-energy dropdown because it is clunky and return the battery input to each day heading in the week calendar. Keep ONLY a small 🔋 icon and one editable 0–100 input under each day/date. Press Enter to save; no visible Save button and no helper text.
+
+Implementation:
+- `app/templates/planner/week.html`: remove `<details id="energy-drawer">` and the strip of seven forms; place each POST /planner/energy form inside its corresponding `th.calendar-day-head` below the weekday/date anchor. Includes CSRF token, day value, view=week, visually hidden submit button so Enter performs the native form submission and screen readers retain a save action. Retain default unsaved zero; actual saved day readings remain unchanged.
+- Moved the `calendar-settings` dialog from a previously malformed Jinja `block title` to the bottom of `block content` so settings display properly rather than becoming part of the HTML page title.
+- `app/static/style.css`: compact per-day inline icon/number styling on desktop/mobile; remove obsolete dropdown styling.
+- `app/static/app.js`: remove obsolete energy drawer storage toggling; no new JavaScript required for Enter-save.
+- `app/templates/base.html`: cache-bump CSS and JS to v0.2.6.
+- `tests/test_calendar_preferences.py`: assert seven forms in their own day-header cells, battery icons, hidden submit buttons and no drawer.
+- Updated README, CHANGELOG, HANDOVER. No DB schema change (v5), no new routes or dependencies, no GitHub Actions.
+
+Deployment remains manual via `cd /opt/fatigue-manager && bash scripts/update.sh` inside existing LXC, with an external backup and local pytest recommended. After deployment verify with mouse/keyboard (Enter) on PC and phone, including preservation of each day’s value after navigation. Never upload private diary data to GitHub.

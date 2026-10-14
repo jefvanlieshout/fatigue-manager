@@ -353,17 +353,6 @@ document.addEventListener("DOMContentLoaded", function () {
       if (event.target === settingsDialog) settingsDialog.close();
     });
   }
-  const energyDrawer = document.getElementById("energy-drawer");
-  if (energyDrawer) {
-    try {
-      energyDrawer.open = sessionStorage.getItem("fatigue-energy-drawer") === "open";
-    } catch (_) { /* no storage needed */ }
-    energyDrawer.addEventListener("toggle", function() {
-      try { sessionStorage.setItem("fatigue-energy-drawer", energyDrawer.open ? "open" : "closed"); }
-      catch (_) { /* optional */ }
-    });
-  }
-
   // This is a visual clock only; no location or activity data leaves the browser.
   function brusselsNow() {
     const parts = new Intl.DateTimeFormat("en-GB", {

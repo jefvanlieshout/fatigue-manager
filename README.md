@@ -2,7 +2,7 @@
 
 A small, private, mobile-first activity and energy diary (English by default, with Dutch selectable). Designed for people who want to learn what uses or restores their energy, without overwhelming app features.
 
-## Current release: v0.2.5 — streamlined calendar, energy colors and printing
+## Current release: v0.2.6 — compact daily energy inputs in week header
 
 - Activity name, starting energy (0–100), ending energy (0–100).
 - Immediate energy-change feedback.
@@ -130,7 +130,7 @@ The application still has only **one shared login**. Independent private user ac
 The planner now focuses on the weekly timetable. **Insights is hidden from the navigation** (underlying feature/data unchanged).
 
 - Activity suggestions combine names from Add Activity, calendar plans, and recurring schedules. A **single searchable list** appears under the activity name; it shows up to six matching activities at a time.
-- Each day’s initial energy rating is accessible under the collapsible **🔋 Starting energy** row above the calendar, instead of filling the day headers. Press **Enter** in a day’s input to save; no visible Save button. The default is still 0/100 and is NOT a stored measurement until submitted.
+- Each day’s starting-energy rating now appears as **🔋 [0–100] immediately beneath its weekday name/date**, inside the timetable header. Press **Enter** to save that day's value. There is no visible Save button, extra helper label, or separate drawer. The default is still 0/100 and is NOT a stored measurement until submitted.
 - Weekday columns and the time axis are compact. Default visible time: **06:00 up to 23:00** (the final slot starts at 22:30). Any planned activity outside the view is kept and listed in that day’s header; nothing is removed from storage.
 - Today is highlighted **green**. The thin **red current-time line** has no text or end circles and progresses continuously. It only appears in the correct local day column while that hour is visible.
 - Deleting an activity or repeat skips the confirmation popup. Use with care: deletion is immediate. Recorded history for completed repeating events is preserved when deleting the repeating schedule.
@@ -149,3 +149,9 @@ bash scripts/update.sh
 ```
 
 Copy a verified backup outside the LXC before upgrading. Test the new gear settings and print view from the browser, and run `python -m pytest -q` with `requirements-dev.txt` installed. If rolling back to pre-v5 code, restore its corresponding pre-migration backup. Full instructions: docs/DEPLOYMENT.md.
+
+## v0.2.6 — Direct battery input under each weekday
+
+The separate starting-energy dropdown/drawer was removed in response to usability feedback. Every weekday column now includes only a small 🔋 icon and its editable 0–100 number input directly below the day name and date. Press Enter to save; the underlying authenticated, CSRF-protected daily-energy endpoint is unchanged and continues to store the value for that day only. An unsaved default of 0 remains just a placeholder, not a recorded measurement.
+
+The layout is compact on mobile. A page-template bug was fixed as part of the update: the gear/settings dialog was moved out of the HTML page-title block and back into the visible content. There are no database migrations in v0.2.6 (SQLite remains schema v5). After running `bash scripts/update.sh`, the stylesheet and browser script will reload with versioned asset URLs. The rest of the weekly planner is unchanged.
