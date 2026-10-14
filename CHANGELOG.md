@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.2.7 — 2026-10-14
+
+- Fixed the settings gear silently doing nothing; reliable modal opening and authenticated standalone settings-page fallback.
+- Extracted the modal and fallback page's common settings form to prevent divergence.
+- Registered gear click handling independently from calendar initialization, bumped static asset versions, and expanded regression tests.
+- SQLite remains v5; no GitHub Actions.
+
 ## v0.2.6 — 2026-10-14
 
 - Restored the editable starting-energy input directly beneath each weekday/date in the week calendar.

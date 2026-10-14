@@ -1,0 +1,30 @@
+  <form method="post" action="/planner/settings" class="settings-form">
+    <input type="hidden" name="token" value="{{ csrf }}">
+    <input type="hidden" name="week" value="{{ monday }}">
+    <fieldset>
+      <legend>{{ t('energy_colors') }}</legend>
+      <p class="muted-small">{{ t('energy_color_help') }}</p>
+      <div class="settings-grid">
+        <label>{{ t('low_energy_range') }} <input type="number" name="low_max" min="0" max="99" value="{{ prefs.low_max }}" required></label>
+        <label>{{ t('low_color') }} <input type="color" name="low_color" value="{{ prefs.low_color }}"></label>
+        <label>{{ t('medium_energy_range') }} <input type="number" name="medium_max" min="1" max="100" value="{{ prefs.medium_max }}" required></label>
+        <label>{{ t('medium_color') }} <input type="color" name="medium_color" value="{{ prefs.medium_color }}"></label>
+        <label>{{ t('high_color') }} <input type="color" name="high_color" value="{{ prefs.high_color }}"></label>
+      </div>
+    </fieldset>
+    <fieldset>
+      <legend>{{ t('visible_hours') }}</legend>
+      <div class="settings-grid">
+        <label>{{ t('starts_at') }} <input type="number" name="day_start" min="0" max="23" value="{{ prefs.day_start }}" required></label>
+        <label>{{ t('ends_at') }} <input type="number" name="day_end" min="1" max="24" value="{{ prefs.day_end }}" required></label>
+      </div>
+    </fieldset>
+    <fieldset>
+      <legend>{{ t('print_hours') }}</legend>
+      <div class="settings-grid">
+        <label>{{ t('starts_at') }} <input type="number" name="print_start" min="0" max="23" value="{{ prefs.print_start }}" required></label>
+        <label>{{ t('ends_at') }} <input type="number" name="print_end" min="1" max="24" value="{{ prefs.print_end }}" required></label>
+      </div>
+    </fieldset>
+    <button class="primary" type="submit">{{ t('save_settings') }}</button>
+  </form>

@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}{{ t('calendar_settings') }} · {{ t('brand') }}{% endblock %}
+{% block content %}
+<div class="intro">
+  <a class="quiet-link" href="/planner/week?week={{ monday }}">← {{ t('week') }}</a>
+  <h1>{{ t('calendar_settings') }}</h1>
+</div>
+<section class="panel standalone-settings">
+  {% include "planner/_settings_form.html" %}
+</section>
+{% endblock %}

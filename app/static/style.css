@@ -388,3 +388,10 @@ footer { text-align: center; color: var(--muted); font-size: .78rem; padding: 14
     width:51px;height:30px;padding:3px;font-size:.81rem
   }
 }
+
+/* v0.2.7: gear works as a link if the modal cannot open. */
+a.settings-gear{
+  display:inline-flex;align-items:center;justify-content:center;
+  text-decoration:none;line-height:1;flex:0 0 auto;
+}
+.standalone-settings{max-width:540px;margin-inline:auto}

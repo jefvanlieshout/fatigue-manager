@@ -1,6 +1,6 @@
 # Fatigue Manager — Handover
 
-Updated: 2026-10-14 — v0.2.6 compact weekday energy controls. Repository: https://github.com/jefvanlieshout/fatigue-manager
+Updated: 2026-10-14 — v0.2.7 settings gear hotfix.
 
 ## Background and core requirement
 
@@ -181,3 +181,7 @@ Implementation:
 - Updated README, CHANGELOG, HANDOVER. No DB schema change (v5), no new routes or dependencies, no GitHub Actions.
 
 Deployment remains manual via `cd /opt/fatigue-manager && bash scripts/update.sh` inside existing LXC, with an external backup and local pytest recommended. After deployment verify with mouse/keyboard (Enter) on PC and phone, including preservation of each day’s value after navigation. Never upload private diary data to GitHub.
+
+## v0.2.7 — Fix nonfunctional gear (2026-10-14)
+
+User reported tapping the ⚙ gear in the weekly planner did nothing. Root cause found in the v0.2.5 template: the settings dialog was mistakenly embedded in the Jinja page TITLE block, rather than in the HTML body. v0.2.6 moved it into the correct CONTENT block. To prevent future silent failures, v0.2.7 also makes the gear an actual link to `GET /planner/settings?week=<monday>`, with the JavaScript opening the existing modal instead when available. A small standalone settings page provides fallback without JavaScript/dialog support. `app/templates/planner/_settings_form.html` is a shared settings form used by the modal and standalone page; the same authenticated POST handler saves changes. The settings modal handler is registered independently at the beginning of app.js so other calendar JS cannot block it. URL-versioned static JS/CSS bumped to v0.2.7. Tests cover GET authentication, link/modal presence and shared fields. No database change (v5), no service change, no Github Actions. Deploy via the usual LXC update script and hard refresh if needed.

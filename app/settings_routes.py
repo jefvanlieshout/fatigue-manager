@@ -1,4 +1,5 @@
 """Settings and full-bleed A4 weekly calendar print view."""
+from datetime import timedelta
 from fastapi import APIRouter, Form, Request
 from fastapi.responses import RedirectResponse
 from .main import check_csrf, require_login, csrf, templates, parsed_day
@@ -6,6 +7,20 @@ from .preferences import load_preferences, save_preferences, energy_class
 from .planner import week_data, calendar_week
 
 router = APIRouter()
+
+@router.get("/settings")
+def settings_page(request: Request, week: str | None = None):
+    """Accessible settings page when JavaScript/dialogs are unavailable."""
+    if response := require_login(request):
+        return response
+    selected = parsed_day(week)
+    monday = selected - timedelta(days=selected.weekday())
+    return templates.TemplateResponse(
+        request=request, name="planner/settings.html",
+        context={"csrf": csrf(request), "monday": monday.isoformat(),
+                 "prefs": load_preferences()},
+    )
+
 
 @router.post("/settings")
 def update_settings(request: Request, token: str = Form(...), week: str = Form(...),

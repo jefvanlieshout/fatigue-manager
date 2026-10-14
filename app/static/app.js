@@ -18,6 +18,23 @@ function updateEnergy() {
     (nl ? "Geen verandering" : "No change");
 }
 document.addEventListener("DOMContentLoaded", function () {
+  // Keep settings working independently from the interactive calendar code.
+  // If JavaScript fails, the gear is a normal link to the settings page.
+  const settingsButton = document.getElementById("calendar-settings-button");
+  const settingsDialog = document.getElementById("calendar-settings");
+  if (settingsButton && settingsDialog && typeof settingsDialog.showModal === "function") {
+    settingsButton.addEventListener("click", function (event) {
+      event.preventDefault();
+      if (!settingsDialog.open) settingsDialog.showModal();
+    });
+    const closeButton = settingsDialog.querySelector("[data-close-settings]");
+    if (closeButton) closeButton.addEventListener("click", function () {
+      settingsDialog.close();
+    });
+  }
+});
+
+document.addEventListener("DOMContentLoaded", function () {
   const before = document.getElementById("energy_before");
   const after = document.getElementById("energy_after");
   if (before && after) {
@@ -343,16 +360,6 @@ document.addEventListener("DOMContentLoaded", function () {
     setMode();
   }
 
-  const settingsDialog = document.getElementById("calendar-settings");
-  const settingsButton = document.getElementById("calendar-settings-button");
-  if (settingsDialog && settingsButton && typeof settingsDialog.showModal === "function") {
-    settingsButton.addEventListener("click", () => settingsDialog.showModal());
-    const closeButton = settingsDialog.querySelector("[data-close-settings]");
-    if (closeButton) closeButton.addEventListener("click", () => settingsDialog.close());
-    settingsDialog.addEventListener("click", event => {
-      if (event.target === settingsDialog) settingsDialog.close();
-    });
-  }
   // This is a visual clock only; no location or activity data leaves the browser.
   function brusselsNow() {
     const parts = new Intl.DateTimeFormat("en-GB", {

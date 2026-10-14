@@ -2,7 +2,7 @@
 
 A small, private, mobile-first activity and energy diary (English by default, with Dutch selectable). Designed for people who want to learn what uses or restores their energy, without overwhelming app features.
 
-## Current release: v0.2.6 — compact daily energy inputs in week header
+## Current release: v0.2.7 — working settings gear (modal + fallback page)
 
 - Activity name, starting energy (0–100), ending energy (0–100).
 - Immediate energy-change feedback.
@@ -155,3 +155,7 @@ Copy a verified backup outside the LXC before upgrading. Test the new gear setti
 The separate starting-energy dropdown/drawer was removed in response to usability feedback. Every weekday column now includes only a small 🔋 icon and its editable 0–100 number input directly below the day name and date. Press Enter to save; the underlying authenticated, CSRF-protected daily-energy endpoint is unchanged and continues to store the value for that day only. An unsaved default of 0 remains just a placeholder, not a recorded measurement.
 
 The layout is compact on mobile. A page-template bug was fixed as part of the update: the gear/settings dialog was moved out of the HTML page-title block and back into the visible content. There are no database migrations in v0.2.6 (SQLite remains schema v5). After running `bash scripts/update.sh`, the stylesheet and browser script will reload with versioned asset URLs. The rest of the weekly planner is unchanged.
+
+## v0.2.7 — Settings gear reliability hotfix
+
+The gear in the Week Planner now has a reliable fallback: with JavaScript it opens the calendar settings modal; without JavaScript (or if the modal fails), it opens `/planner/settings?week=YYYY-MM-DD`, an authenticated, CSRF-protected settings page offering the same saved preferences. The shared form is in `app/templates/planner/_settings_form.html` so both paths stay in sync. The settings dialog remains in the template's visible content, not the page title. This is a UI-only update: SQLite stays at v5. No GitHub Actions.

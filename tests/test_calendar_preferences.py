@@ -111,6 +111,9 @@ def test_ui_markers_gear_and_no_confirm(tmp_path):
     try:
         html = client.get("/planner/week?week=2026-10-13").text
         assert 'id="calendar-settings-button"' in html
+        assert 'href="/planner/settings?week=2026-10-12"' in html
+        assert 'id="calendar-settings"' in html
+
         assert 'id="energy-drawer"' not in html
         assert html.count('class="calendar-energy-inline"') == 7
         assert html.count('class="battery-symbol"') == 7
@@ -128,3 +131,34 @@ def test_ui_markers_gear_and_no_confirm(tmp_path):
         assert 'href="/planner/insights"' not in html
     finally:
         client.__exit__(None, None, None)
+
+def test_gear_opens_settings_as_a_page_without_javascript(tmp_path):
+    client, csrf = login(tmp_path)
+    try:
+        week_html = client.get("/planner/week?week=2026-10-14").text
+        assert 'id="calendar-settings-button"' in week_html
+        assert 'href="/planner/settings?week=2026-10-12"' in week_html
+        assert '<dialog class="calendar-dialog preferences-dialog" id="calendar-settings"' in week_html
+        assert "<title>Weekly planner" in week_html or "<title>" in week_html
+        settings = client.get("/planner/settings?week=2026-10-14")
+        assert settings.status_code == 200
+        assert 'action="/planner/settings"' in settings.text
+        assert 'name="low_max"' in settings.text
+        assert 'name="day_start"' in settings.text
+        assert 'name="print_start"' in settings.text
+        assert 'name="token"' in settings.text
+        assert 'value="2026-10-12"' in settings.text
+        js = (__import__("pathlib").Path(__file__).resolve().parents[1] / "app/static/app.js").read_text()
+        assert 'event.preventDefault();' in js
+        assert 'settingsDialog.showModal()' in js
+    finally:
+        client.__exit__(None, None, None)
+
+
+def test_settings_get_requires_login(tmp_path):
+    main.DB_PATH = tmp_path / "locked.sqlite3"
+    main.PASSWORD_HASH = main.hash_password("test-user-password-123")
+    with TestClient(main.app) as client:
+        response = client.get("/planner/settings?week=2026-10-14", follow_redirects=False)
+        assert response.status_code == 303
+        assert response.headers["location"] == "/login"
