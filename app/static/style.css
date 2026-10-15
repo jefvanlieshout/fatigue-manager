@@ -395,3 +395,44 @@ a.settings-gear{
   text-decoration:none;line-height:1;flex:0 0 auto;
 }
 .standalone-settings{max-width:540px;margin-inline:auto}
+
+/* v0.2.8: calm autocomplete, fixed suggestion selection, daily energy outlook */
+.activity-name-field{position:relative}
+.calendar-dialog .activity-suggest-panel{
+  position:absolute;z-index:60;top:calc(100% + 4px);left:0;right:0;
+  display:flex;flex-direction:column;max-height:232px;overflow-y:auto;
+  border:1px solid #bfd5c7;border-radius:12px;background:#f8fbf9;
+  box-shadow:0 12px 26px rgba(31,64,45,.13);
+  padding:5px;margin:0
+}
+.calendar-dialog .activity-suggest-panel[hidden]{display:none}
+.calendar-dialog .activity-suggest-caption{
+  margin:2px 8px 5px;font-size:.7rem;font-weight:700;color:#607a68;
+  text-transform:none;letter-spacing:.015em
+}
+.calendar-dialog .activity-suggest-option{
+  display:flex;align-items:center;justify-content:space-between;
+  width:100%;min-height:38px;gap:10px;padding:8px 10px;
+  background:transparent;color:#244b35;text-align:left;
+  border:none;border-radius:8px;box-shadow:none;font:inherit;font-size:.88rem;
+  cursor:pointer
+}
+.calendar-dialog .activity-suggest-option[hidden]{display:none}
+.calendar-dialog .activity-suggest-option:hover,
+.calendar-dialog .activity-suggest-option:focus-visible{
+  background:#e5f2e9;outline:2px solid #9ac6ab;outline-offset:-2px
+}
+.calendar-dialog .activity-suggest-option .suggest-name{overflow-wrap:anywhere}
+.calendar-dialog .activity-suggest-option .suggest-arrow{flex-shrink:0;color:#819e89}
+.daily-energy-remaining{margin-top:3px;display:flex;align-items:center;
+  justify-content:center;gap:3px;font-size:.71rem;color:#316a4c;line-height:1.25;
+  white-space:nowrap;font-variant-numeric:tabular-nums}
+.daily-energy-remaining .remaining-value{font-weight:800}
+.daily-energy-remaining.energy-overbooked{color:#bb3e4b}
+.daily-energy-remaining .remaining-unknown{display:inline-flex;align-items:center;
+  justify-content:center;width:13px;height:13px;border-radius:50%;
+  background:#fff1d9;color:#855719;font-size:.67rem;font-weight:700}
+@media(max-width:750px){
+  .shell.wide .daily-energy-remaining{font-size:.65rem;gap:2px}
+  .calendar-dialog .activity-suggest-panel{max-height:190px}
+}

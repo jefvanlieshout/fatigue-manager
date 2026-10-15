@@ -198,6 +198,7 @@ document.addEventListener("DOMContentLoaded", function () {
       const options = [...picker.querySelectorAll(".activity-suggest-option")];
       function showSuggestions() {
         const needle = nameInput.value.trim().toLocaleLowerCase();
+        if (!needle) { picker.hidden = true; return; }
         let shown = 0;
         for (const option of options) {
           const match = option.dataset.activityName.toLocaleLowerCase().includes(needle);
@@ -206,13 +207,26 @@ document.addEventListener("DOMContentLoaded", function () {
         }
         picker.hidden = shown === 0;
       }
-      nameInput.addEventListener("focus", showSuggestions);
+      // Choosing a suggestion must not refocus the text field and reopen the
+      // dropdown over Save. The suggestions are positioned outside form flow.
+      let suppressNextFocus = false;
+      nameInput.addEventListener("focus", function () {
+        if (suppressNextFocus) { suppressNextFocus = false; return; }
+        showSuggestions();
+      });
       nameInput.addEventListener("input", showSuggestions);
-      options.forEach(option => option.addEventListener("click", function () {
-        nameInput.value = option.dataset.activityName;
-        picker.hidden = true;
-        nameInput.focus();
-      }));
+      options.forEach(function (option) {
+        option.addEventListener("pointerdown", event => event.preventDefault());
+        option.addEventListener("click", function () {
+          nameInput.value = option.dataset.activityName;
+          picker.hidden = true;
+          if (document.activeElement !== nameInput) {
+            suppressNextFocus = true;
+            nameInput.focus({ preventScroll: true });
+          }
+        });
+      });
+      quickForm.addEventListener("submit", function () { picker.hidden = true; });
       nameInput.addEventListener("keydown", function (event) {
         if (event.key === "Escape") picker.hidden = true;
         if (event.key === "ArrowDown" && !picker.hidden) {
@@ -460,4 +474,33 @@ document.addEventListener("DOMContentLoaded", function () {
     // Move precisely enough for a smooth transition while limiting background work.
     setInterval(moveNowLine, 5000);
   }
+});
+
+document.addEventListener("DOMContentLoaded", function () {
+  // Preview the daily forecast while its wake-up energy is being typed.
+  // Until saved, the default 0 in the input is NOT treated as an observation.
+  document.querySelectorAll(".calendar-energy-inline").forEach(function (form) {
+    const input = form.querySelector('input[name="starting_energy"]');
+    const forecast = form.parentElement.querySelector(".daily-energy-remaining");
+    if (!input || !forecast) return;
+    const valueEl = forecast.querySelector(".remaining-value");
+    const net = Number(forecast.dataset.net);
+    const estimated = forecast.dataset.estimate === "1";
+    const hadReading = forecast.dataset.saved === "1";
+    function render() {
+      const valid = input.value.trim() !== "" &&
+        input.validity.valid && Number.isFinite(Number(input.value));
+      const isEdited = input.value !== input.defaultValue;
+      if (!valid || (!hadReading && !isEdited)) {
+        valueEl.textContent = "—";
+        forecast.classList.remove("energy-overbooked");
+        return;
+      }
+      const remaining = Number((Number(input.value) + net).toFixed(1));
+      valueEl.textContent = (estimated ? "≈" : "") + String(remaining);
+      forecast.classList.toggle("energy-overbooked", remaining < 0);
+    }
+    input.addEventListener("input", render);
+    render();
+  });
 });

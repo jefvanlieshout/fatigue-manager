@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.2.8 — 2026-10-15
+
+- Fixed intermittent Save clicks after choosing a previously used activity: stop picker from reopening on refocus and keep the suggestions out of the form's layout flow.
+- Restyled the activity list into a small, light, keyboard-accessible search panel; suppress empty-input suggestions.
+- Added remaining-energy estimate below each day's battery input: saved starting energy plus recorded actuals and estimated planned activity changes, without double-counting completed plans.
+- Flag unknown energy costs instead of treating them as zero; show ≈ for estimates, preserve negative deficits, offer live preview when wake-up energy is typed.
+- English/Dutch labels, tests, README and handover updated. No database migration or GitHub Actions.
+
+
 ## v0.2.7 — 2026-10-14
 
 - Fixed the settings gear silently doing nothing; reliable modal opening and authenticated standalone settings-page fallback.

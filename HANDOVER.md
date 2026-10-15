@@ -1,6 +1,6 @@
 # Fatigue Manager — Handover
 
-Updated: 2026-10-14 — v0.2.7 settings gear hotfix.
+Updated: 2026-10-15 — v0.2.8 activity picker and remaining-energy outlook.
 
 ## Background and core requirement
 
@@ -185,3 +185,22 @@ Deployment remains manual via `cd /opt/fatigue-manager && bash scripts/update.sh
 ## v0.2.7 — Fix nonfunctional gear (2026-10-14)
 
 User reported tapping the ⚙ gear in the weekly planner did nothing. Root cause found in the v0.2.5 template: the settings dialog was mistakenly embedded in the Jinja page TITLE block, rather than in the HTML body. v0.2.6 moved it into the correct CONTENT block. To prevent future silent failures, v0.2.7 also makes the gear an actual link to `GET /planner/settings?week=<monday>`, with the JavaScript opening the existing modal instead when available. A small standalone settings page provides fallback without JavaScript/dialog support. `app/templates/planner/_settings_form.html` is a shared settings form used by the modal and standalone page; the same authenticated POST handler saves changes. The settings modal handler is registered independently at the beginning of app.js so other calendar JS cannot block it. URL-versioned static JS/CSS bumped to v0.2.7. Tests cover GET authentication, link/modal presence and shared fields. No database change (v5), no service change, no Github Actions. Deploy via the usual LXC update script and hard refresh if needed.
+
+## v0.2.8 — Picker bugfix + per-day remaining-energy outlook (2026-10-15)
+
+User reported: clicking a suggested existing activity and then Save intermittently failed to create the calendar entry, whereas clicking outside the name panel first sometimes worked. The old `app/static/app.js` picker handler hid the popup, then immediately called `nameInput.focus()`; the `focus` handler immediately ran `showSuggestions()`, reopening the overlay. Because the panel was in normal document flow, it shifted and intercepted subsequent clicks.
+
+Fix:
+- `app/static/app.js`: suggestion selection prevents pointer-driven focus stealing, hides the list, and only returns keyboard focus to name input with a one-time focus suppression. Clears suggestions on form submission. The popup stays hidden on empty input, has Escape and ArrowDown keyboard affordances.
+- `app/templates/planner/week.html`: compact single list with a small caption and separated selectable activity buttons. Place `activity-name-field` as a relative positioning root.
+- `app/static/style.css`: suggestions are positioned as an absolute dropdown over the form, not pushing down dates, energy fields or Save; soft-light theme, proper hover/focus/mobile rules.
+
+Remaining-energy feature:
+- `app/planner.py::daily_energy_projection` combines the saved daily starting score with **actual recorded** `energy_after - energy_before` for diary activities plus **estimated** differences for *uncompleted* planned or recurring activities. Uses plan `expected_delta` when set, otherwise historical median for the matching recorded activity name. Already-completed plans are excluded upstream by `week_data` so no double counting. Each day includes `net`, `remaining`, `estimated_count`, `unknown_count`, `is_estimate`. Negative residual is preserved to flag an overfull day.
+- `app/templates/planner/week.html`: small `remaining` text below each day's energy input; projected values marked with ≈, '?' warns that N unknown-cost plans were excluded; if morning energy is not saved, shows — instead of treating placeholder 0 as a measurement.
+- `app/static/app.js`: recalculates preview immediately when the user edits the energy input, but **only the existing Enter-to-save form** persists the new reading. Typed but unsaved default remains distinct from stored data.
+- `app/i18n.py`: bilingual English/Dutch labels and explanations. `tests/test_remaining_energy.py`: arithmetic, missing estimates, historical medians, completion not duplicated, deficit display, picker regression checks.
+- The original diary, recurrence, energy color thresholds, A4 print, settings gear, green current day and red time line remain unchanged.
+- No database migration, additional services, extra LXC, credential changes, or GitHub Actions. SQLite schema remains v5, single-user mode still applies.
+
+Verification: deploy via existing manual update script after backup, run local pytest, then select a known activity and immediately click Save on both phone and desktop. Enter 80 wake-up energy and verify the remaining score changes; then complete a plan and check that it is counted exactly once. Actual browser test remains to be done on user's devices, and screenshots should contain no sensitive diary data.

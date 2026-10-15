@@ -207,6 +207,34 @@ def week_data(selected: date) -> tuple[date, list[dict]]:
     return monday, days
 
 
+def daily_energy_projection(day: dict) -> dict:
+    """Personal planning arithmetic; never infer a missing activity's energy cost.
+
+    Completed plans have already been excluded from day['plans'] by week_data,
+    so their diary entries contribute exactly once. Negative totals intentionally
+    remain negative, making an overfull day visible rather than hiding the deficit.
+    """
+    net = sum(item["delta"] for item in day["records"])
+    estimated = 0
+    unknown = 0
+    for plan in day["plans"]:
+        delta = plan["suggested"]
+        if delta is None:
+            unknown += 1
+        else:
+            net += delta
+            estimated += 1
+    starting = day["energy"]
+    remaining = round(starting + net, 1) if starting is not None else None
+    return {
+        "net": round(net, 1),
+        "remaining": remaining,
+        "estimated_count": estimated,
+        "unknown_count": unknown,
+        "is_estimate": estimated > 0 or unknown > 0,
+    }
+
+
 def calendar_slot(time_text: str) -> str:
     minute = minute_of_day(time_text)
     return f"{minute // 60:02d}:{(minute % 60 // 30) * 30:02d}"
@@ -306,6 +334,8 @@ def week_page(request: Request, week: str | None = None):
     from .preferences import load_preferences, energy_class
     prefs = load_preferences()
     monday, days = week_data(parsed_day(week))
+    for d in days:
+        d["projection"] = daily_energy_projection(d)
     slots, days = calendar_week(days, prefs["day_start"], prefs["day_end"])
     for d in days:
         for events in d["slots"].values():

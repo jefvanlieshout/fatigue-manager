@@ -2,7 +2,7 @@
 
 A small, private, mobile-first activity and energy diary (English by default, with Dutch selectable). Designed for people who want to learn what uses or restores their energy, without overwhelming app features.
 
-## Current release: v0.2.7 — working settings gear (modal + fallback page)
+## Current release: v0.2.8 — more reliable activity lookup and remaining-energy outlook
 
 - Activity name, starting energy (0–100), ending energy (0–100).
 - Immediate energy-change feedback.
@@ -159,3 +159,17 @@ The layout is compact on mobile. A page-template bug was fixed as part of the up
 ## v0.2.7 — Settings gear reliability hotfix
 
 The gear in the Week Planner now has a reliable fallback: with JavaScript it opens the calendar settings modal; without JavaScript (or if the modal fails), it opens `/planner/settings?week=YYYY-MM-DD`, an authenticated, CSRF-protected settings page offering the same saved preferences. The shared form is in `app/templates/planner/_settings_form.html` so both paths stay in sync. The settings dialog remains in the template's visible content, not the page title. This is a UI-only update: SQLite stays at v5. No GitHub Actions.
+
+## v0.2.8 — Activity lookup reliability and daily remaining energy
+
+The weekly calendar now shows a small **remaining-energy estimate** below each weekday's 🔋 starting-energy input.
+
+- A saved morning energy rating is the starting point. For example: start at 80, complete an activity using 15 points, and plan one expected to use 25 more → **≈40 left**.
+- Completed diary entries contribute their **actual** before/after difference. Uncompleted one-off and recurring tasks contribute either their explicitly entered expected difference or a median from earlier completed activities with the same name. **Completed plans are never counted a second time**.
+- Activities with no known energy change are excluded from the arithmetic and marked with a **?**, with an explanation. If any future/unknown values are involved, the number is prefixed with **≈**. Negative totals are left negative to make an overfull schedule obvious.
+- The app does not invent a starting-energy measurement: if only the unsaved default 0 appears, the forecast shows **—** until someone enters their own rating. Typing a value shows a live preview immediately; **Enter still saves** as before.
+- These are personal, subjective planning estimates—not medical advice or a physical battery calculation. The number is a **whole-day outlook**, not a minute-by-minute forecast.
+
+**Autocomplete usability fix:** Picking a previously used activity now closes the suggestions without immediately reopening them. The list floats over the form rather than pushing the Save button around; it stays hidden for empty input, shows up to six matching names, and has a softer light background and keyboard access. This fixes the likely cause of inconsistent Save clicks after selecting a suggestion.
+
+No database migration; schema remains **v5**. Reuse existing LXC/SQLite and manually deploy via `cd /opt/fatigue-manager && bash scripts/update.sh`. The CSS/JS query version is **0.2.8** to invalidate browser cache. Run local pytest and verify picking a suggestion followed immediately by Save, plus changes to remaining energy when activities are planned, completed, or removed. No GitHub Actions.
