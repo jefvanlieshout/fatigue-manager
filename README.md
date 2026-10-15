@@ -2,7 +2,7 @@
 
 A small, private, mobile-first activity and energy diary (English by default, with Dutch selectable). Designed for people who want to learn what uses or restores their energy, without overwhelming app features.
 
-## Current release: v0.2.8 — more reliable activity lookup and remaining-energy outlook
+## Current release: v0.2.9 — optional-energy calendar items
 
 - Activity name, starting energy (0–100), ending energy (0–100).
 - Immediate energy-change feedback.
@@ -173,3 +173,7 @@ The weekly calendar now shows a small **remaining-energy estimate** below each w
 **Autocomplete usability fix:** Picking a previously used activity now closes the suggestions without immediately reopening them. The list floats over the form rather than pushing the Save button around; it stays hidden for empty input, shows up to six matching names, and has a softer light background and keyboard access. This fixes the likely cause of inconsistent Save clicks after selecting a suggestion.
 
 No database migration; schema remains **v5**. Reuse existing LXC/SQLite and manually deploy via `cd /opt/fatigue-manager && bash scripts/update.sh`. The CSS/JS query version is **0.2.8** to invalidate browser cache. Run local pytest and verify picking a suggestion followed immediately by Save, plus changes to remaining energy when activities are planned, completed, or removed. No GitHub Actions.
+
+## v0.2.9 — Calendar items without energy readings
+
+An activity may be added solely for scheduling. The small `?` badge next to remaining energy has been removed. Activities without a known energy difference remain on the calendar normally and continue to be omitted from energy arithmetic; the remaining value uses `≈` when it is incomplete or estimated. The battery controls, activity editor and the rest of the week view are unchanged. No database migration, GitHub Actions or new dependencies.

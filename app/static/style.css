@@ -429,9 +429,6 @@ a.settings-gear{
   white-space:nowrap;font-variant-numeric:tabular-nums}
 .daily-energy-remaining .remaining-value{font-weight:800}
 .daily-energy-remaining.energy-overbooked{color:#bb3e4b}
-.daily-energy-remaining .remaining-unknown{display:inline-flex;align-items:center;
-  justify-content:center;width:13px;height:13px;border-radius:50%;
-  background:#fff1d9;color:#855719;font-size:.67rem;font-weight:700}
 @media(max-width:750px){
   .shell.wide .daily-energy-remaining{font-size:.65rem;gap:2px}
   .calendar-dialog .activity-suggest-panel{max-height:190px}

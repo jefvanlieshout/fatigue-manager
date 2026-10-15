@@ -53,10 +53,6 @@
                title="{{ t('remaining_explainer') }}">
             <span class="remaining-value">{% if d.projection.remaining is not none %}{{ '≈' if d.projection.is_estimate else '' }}{{ '%g'|format(d.projection.remaining) }}{% else %}—{% endif %}</span>
             <span class="remaining-text">{{ t('energy_left') }}</span>
-            {% if d.projection.unknown_count %}
-              <span class="remaining-unknown" title="{{ t('missing_energy_count', n=d.projection.unknown_count) }}"
-                    aria-label="{{ t('missing_energy_count', n=d.projection.unknown_count) }}">?</span>
-            {% endif %}
           </div>
           {% if d.untimed %}
           <div class="calendar-untimed">

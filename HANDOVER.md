@@ -1,6 +1,6 @@
 # Fatigue Manager — Handover
 
-Updated: 2026-10-15 — v0.2.8 activity picker and remaining-energy outlook.
+Updated: 2026-10-15 — v0.2.9 calendar-only activities without warning badge.
 
 ## Background and core requirement
 
@@ -204,3 +204,7 @@ Remaining-energy feature:
 - No database migration, additional services, extra LXC, credential changes, or GitHub Actions. SQLite schema remains v5, single-user mode still applies.
 
 Verification: deploy via existing manual update script after backup, run local pytest, then select a known activity and immediately click Save on both phone and desktop. Enter 80 wake-up energy and verify the remaining score changes; then complete a plan and check that it is counted exactly once. Actual browser test remains to be done on user's devices, and screenshots should contain no sensitive diary data.
+
+## v0.2.9 — Remove unknown-energy warning badge (2026-10-15)
+
+The user and their mother also use Fatigue Manager as an ordinary calendar, so not every planned item needs an energy reading. Remove the small '?' unknown-energy badge beneath each weekday. `app/templates/planner/week.html` no longer renders `remaining-unknown`; redundant CSS removed. `daily_energy_projection` still omits unknown costs and marks the resulting number with ≈ when estimated/incomplete, rather than assuming unknown cost equals zero. Test expectations adjusted to assert no '?' badge and a correct approximately-marked remaining value. Asset cache version bumped to 0.2.9. No DB or recurrence changes. Run `bash scripts/update.sh` inside the existing LXC and local pytest; no GitHub Actions.

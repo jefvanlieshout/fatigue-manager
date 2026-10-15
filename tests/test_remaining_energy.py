@@ -56,7 +56,8 @@ def test_remaining_energy_uses_actual_and_planned_once(tmp_path):
         assert result["is_estimate"] is True
         html = client.get("/planner/week?week=2026-10-15").text
         assert "50" in html
-        assert "1 planned activities without a known energy change" in html
+        assert 'class="remaining-unknown"' not in html
+        assert 'class="remaining-value">≈50</span>' in html
         with main.connect() as db:
             walk_id = db.execute(
                 "SELECT id FROM planned_activities WHERE activity_name='Walk'"

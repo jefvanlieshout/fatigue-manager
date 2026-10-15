@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.2.9 — 2026-10-15
+
+- Removed the small '?' warning badge for calendar events without energy readings.
+- Kept events usable as ordinary calendar appointments; only known energy changes contribute to the remaining-energy estimate (≈ indicates an incomplete/estimated figure).
+- Cleaned unused styling, updated regression tests and documentation. No schema change or GitHub Actions.
+
+
 ## v0.2.8 — 2026-10-15
 
 - Fixed intermittent Save clicks after choosing a previously used activity: stop picker from reopening on refocus and keep the suggestions out of the form's layout flow.
