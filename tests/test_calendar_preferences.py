@@ -176,10 +176,11 @@ def test_print_week_shows_same_daily_remaining_energy_as_calendar(tmp_path):
             "starting_energy": "80", "view": "week",
         }, follow_redirects=False)
         assert saved.status_code == 303
-        recorded = client.post("/entries", data={
-            "token": token, "activity_name": "Early breakfast",
-            "energy_before": "80", "energy_after": "70",
-            "occurred_at": "2026-10-14T06:30",
+        recorded = client.post("/planner/create", data={
+            "token": token, "day": "2026-10-14",
+            "activity_name": "Early breakfast",
+            "planned_time": "06:30", "end_time": "06:50",
+            "mode": "completed", "energy_before": "80", "energy_after": "70",
         }, follow_redirects=False)
         assert recorded.status_code == 303
         for activity, delta in (("Walk", "-25"), ("Appointment", "")):
@@ -210,10 +211,11 @@ def test_print_week_shows_same_daily_remaining_energy_as_calendar(tmp_path):
         assert "≈-10 left" in printed.text
         assert "— left" in printed.text
         assert "print-energy-deficit" in printed.text
+        assert 'class="print-title"' not in printed.text
         assert 'data-count="30"' in printed.text
         assert 'class="remaining-unknown"' not in printed.text
-        assert "/static/print.css?v=0.2.10" in printed.text
-        assert "/static/print.js?v=0.2.10" in printed.text
+        assert "/static/print.css?v=0.2.11" in printed.text
+        assert "/static/print.js?v=0.2.11" in printed.text
         screen = client.get("/planner/week?week=2026-10-14").text
         assert 'class="remaining-value">≈45</span>' in screen
     finally:
@@ -230,7 +232,7 @@ def test_print_energy_summary_keeps_a4_full_bleed_dimensions():
         / "planner" / "print.html"
     ).read_text()
     assert "@page{size:A4 landscape;margin:0}" in css
-    assert "height:17mm" in css
-    assert "const rowMm = 181 / count;" in js
+    assert "height:10mm" in css
+    assert "const rowMm = 200 / count;" in js
     assert 'class="print-energy-remaining' in template
     assert "d.projection.is_estimate" in template

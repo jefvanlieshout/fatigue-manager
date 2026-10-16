@@ -12,7 +12,7 @@ def init_recurrence_db() -> None:
     with connect() as db:
         db.execute("BEGIN IMMEDIATE")
         version = db.execute("PRAGMA user_version").fetchone()[0]
-        if version not in (3, 4, 5):
+        if version not in (3, 4, 5, 6):
             raise RuntimeError(f"Expected v3 or v4 database, got {version}")
         db.execute("""
             CREATE TABLE IF NOT EXISTS recurring_rules (

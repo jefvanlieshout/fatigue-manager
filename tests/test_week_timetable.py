@@ -82,9 +82,11 @@ def test_recorded_and_untimed_items_survive_timetable(diary):
         "token": token, "day": "2026-10-14", "activity_name": "A flexible task",
         "planned_time": "", "view": "week",
     })
-    client.post("/entries", data={
-        "token": token, "activity_name": "Cooking", "energy_before": "80",
-        "energy_after": "62", "occurred_at": "2026-10-14T18:20",
+    client.post("/planner/create", data={
+        "token": token, "day": "2026-10-14",
+        "activity_name": "Cooking", "planned_time": "18:20",
+        "end_time": "19:00", "mode": "completed",
+        "energy_before": "80", "energy_after": "62",
     })
     _, days = week_data(__import__("datetime").date(2026, 10, 14))
     _, days = calendar_week(days)

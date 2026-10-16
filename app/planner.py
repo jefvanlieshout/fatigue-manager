@@ -16,11 +16,11 @@ router = APIRouter(prefix="/planner")
 
 
 def initialize_planner_database() -> None:
-    """Transactional migration from older databases up to v4."""
+    """Transactional migration from older databases up to v6."""
     with connect() as db:
         db.execute("BEGIN IMMEDIATE")
         version = db.execute("PRAGMA user_version").fetchone()[0]
-        if version not in (1, 2, 3, 4, 5):
+        if version not in (1, 2, 3, 4, 5, 6):
             raise RuntimeError("Unsupported database version for planner migration")
         db.execute("""
             CREATE TABLE IF NOT EXISTS daily_energy (
@@ -54,6 +54,28 @@ def initialize_planner_database() -> None:
     init_recurrence_db()
     from .preferences import init_preferences
     init_preferences()
+    # Index samples from Add Activity must not become calendar events or
+    # reduce the actual energy left on a day.
+    with connect() as db:
+        db.execute("BEGIN IMMEDIATE")
+        current = db.execute("PRAGMA user_version").fetchone()[0]
+        if current == 5:
+            fields = {row["name"] for row in db.execute("PRAGMA table_info(entries)")}
+            if "calendar_visible" not in fields:
+                db.execute("ALTER TABLE entries ADD COLUMN calendar_visible INTEGER NOT NULL DEFAULT 0 "
+                           "CHECK(calendar_visible IN (0,1))")
+            # Old linked plan completions definitely originated from the calendar.
+            db.execute("UPDATE entries SET calendar_visible=1 WHERE id IN "
+                       "(SELECT linked_entry_id FROM planned_activities "
+                       "WHERE linked_entry_id IS NOT NULL)")
+            db.execute("UPDATE entries SET calendar_visible=1 WHERE id IN "
+                       "(SELECT linked_entry_id FROM recurring_exceptions "
+                       "WHERE linked_entry_id IS NOT NULL AND action='completed')")
+            db.execute("CREATE INDEX IF NOT EXISTS idx_entries_calendar "
+                       "ON entries(calendar_visible,occurred_at)")
+            db.execute("PRAGMA user_version=6")
+        elif current != 6:
+            raise RuntimeError("Expected database schema v5 or v6 after preferences migration")
 
 
 def now_utc() -> str:
@@ -169,7 +191,7 @@ def week_data(selected: date) -> tuple[date, list[dict]]:
             )
         }
         records = db.execute(
-            "SELECT * FROM entries WHERE occurred_at>=? AND occurred_at<? ORDER BY occurred_at",
+            "SELECT * FROM entries WHERE calendar_visible=1 AND occurred_at>=? AND occurred_at<? ORDER BY occurred_at",
             (first_utc, final_utc),
         ).fetchall()
     plans = all_plans_for(monday, last)
@@ -500,8 +522,8 @@ def complete_plan(
         )
         actual_ending = actual_end(observed, ended_at)
         cursor = db.execute(
-            "INSERT INTO entries(activity_name,energy_before,energy_after,occurred_at,created_at,ended_at) "
-            "VALUES(?,?,?,?,?,?)", (name, before, after, observed, now_utc(), actual_ending),
+            "INSERT INTO entries(activity_name,energy_before,energy_after,occurred_at,created_at,ended_at,calendar_visible) "
+            "VALUES(?,?,?,?,?,?,1)", (name, before, after, observed, now_utc(), actual_ending),
         )
         db.execute(
             "UPDATE planned_activities SET status='completed',linked_entry_id=? WHERE id=?",
@@ -565,8 +587,8 @@ def create_from_timetable(
         )
         with connect() as db:
             db.execute(
-                "INSERT INTO entries(activity_name,energy_before,energy_after,occurred_at,created_at,ended_at) "
-                "VALUES(?,?,?,?,?,?)",
+                "INSERT INTO entries(activity_name,energy_before,energy_after,occurred_at,created_at,ended_at,calendar_visible) "
+                "VALUES(?,?,?,?,?,?,1)",
                 (name, before, after, observed, now_utc(), observed_end),
             )
     return RedirectResponse(destination(selected.isoformat(), "week"), status_code=303)

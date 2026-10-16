@@ -57,7 +57,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const lanes = Math.max(1, Number(item.dataset.columns));
     const lane = Math.max(0, Number(item.dataset.lane));
     item.classList.add("calendar-event-positioned");
-    item.style.height = (spans * 36 - 4) + "px";
+    item.style.height = (spans * 36 - 2) + "px";
     item.style.left = "calc(" + (lane * 100 / lanes) + "% + 3px)";
     item.style.width = "calc(" + (100 / lanes) + "% - 6px)";
     const bucket = Object.keys(energyPalette).find(key => item.classList.contains(key));

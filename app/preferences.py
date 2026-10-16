@@ -11,7 +11,7 @@ def init_preferences():
     with connect() as db:
         db.execute("BEGIN IMMEDIATE")
         version = db.execute("PRAGMA user_version").fetchone()[0]
-        if version not in (4, 5):
+        if version not in (4, 5, 6):
             raise RuntimeError("Expected v4 or v5 database")
         db.execute("""CREATE TABLE IF NOT EXISTS app_preferences (
             id INTEGER PRIMARY KEY CHECK(id = 1),
@@ -24,7 +24,8 @@ def init_preferences():
             (id,low_max,medium_max,low_color,medium_color,high_color,
             day_start,day_end,print_start,print_end)
             VALUES (1,?,?,?,?,?,?,?,?,?)""", tuple(DEFAULTS.values()))
-        db.execute("PRAGMA user_version=5")
+        if version == 4:
+            db.execute("PRAGMA user_version=5")
 
 def load_preferences():
     with connect() as db:

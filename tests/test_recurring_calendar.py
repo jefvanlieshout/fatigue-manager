@@ -37,7 +37,7 @@ def test_v4_migration_does_not_alter_existing_entries(tmp_path):
     initialize_planner_database()
     initialize_planner_database()
     with main.connect() as db:
-        assert db.execute("PRAGMA user_version").fetchone()[0] == 5
+        assert db.execute("PRAGMA user_version").fetchone()[0] == 6
         assert db.execute("SELECT COUNT(*) FROM entries").fetchone()[0] == 1
         assert db.execute("SELECT activity_name FROM entries").fetchone()[0] == "Original"
         assert db.execute("SELECT COUNT(*) FROM recurring_rules").fetchone()[0] == 0
@@ -61,7 +61,7 @@ def test_daily_series_skip_modify_complete_and_delete(tmp_path):
         with main.connect() as db:
             rule_id = db.execute("SELECT id FROM recurring_rules").fetchone()[0]
             assert db.execute("SELECT COUNT(*) FROM planned_activities").fetchone()[0] == 0
-            assert db.execute("PRAGMA user_version").fetchone()[0] == 5
+            assert db.execute("PRAGMA user_version").fetchone()[0] == 6
         plans = all_plans_for(date(2026, 10, 13), date(2026, 10, 20))
         assert [p["scheduled_day"] for p in plans if p["recurring"]] == [
             "2026-10-13", "2026-10-14", "2026-10-15", "2026-10-16"

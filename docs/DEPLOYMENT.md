@@ -124,3 +124,10 @@ This release applies the v4→v5 SQLite migration on service startup: adds an `a
 Expected schema: **5**. Perform local pytest in a temporary virtual environment, then try the gear dialog, save setting preferences, Enter-to-save daily battery field, lookup of earlier calendar tasks, current-time rollover, and A4 print view. Browser hard reload if static assets are cached; asset query version is v0.2.5. Print CSS asks for zero margins but actual hardware may prevent borderless output.
 
 If reverting to code that only supports schema v4, restore both its Git revision and a pre-update v4 database backup. No GitHub Actions or additional services are needed.
+
+
+## v0.2.11 — Reference library classification
+
+**Schema v5→v6** adds a `calendar_visible` flag to diary entries. Samples entered via **Add Activity** do not appear in the calendar or lower the day's remaining energy; actual recorded calendar events do. The migration preserves all rows and can identify already-completed activities linked to plans; **older direct calendar completions without linked plans are classified as reference samples** because there was previously no origin marker. They remain in the Add Activity history/export and contribute to future activity-cost estimates.
+
+Before updating, copy a verified database backup outside the LXC. Run `bash scripts/backup.sh` and `bash scripts/update.sh` from `/opt/fatigue-manager`; check `PRAGMA user_version;` returns **6**. Test the reference/calendar separation and compact print preview on a real browser/printer. Roll back only with both matching code and a matching database backup; no GitHub Actions.

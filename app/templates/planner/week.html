@@ -16,11 +16,6 @@
   <a class="quiet-link print-week-link" href="/planner/print?week={{ monday }}" target="_blank" rel="noopener">🖨 {{ t('print_week') }}</a>
 </nav>
 
-<div class="calendar-legend" aria-label="{{ t('calendar_legend') }}">
-  <span><i class="legend-dot planned" aria-hidden="true"></i>{{ t('planned') }}</span>
-  <span><i class="legend-dot recorded" aria-hidden="true"></i>{{ t('completed') }}</span>
-  <span class="calendar-swipe">{{ t('calendar_swipe') }}</span>
-</div>
 <div class="calendar-scroll" id="calendar-scroll" data-week="{{ monday }}"
   data-low-color="{{ prefs.low_color }}" data-medium-color="{{ prefs.medium_color }}"
   data-high-color="{{ prefs.high_color }}" data-day-start="{{ prefs.day_start }}"

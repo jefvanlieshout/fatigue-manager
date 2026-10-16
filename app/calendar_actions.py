@@ -134,8 +134,8 @@ def calendar_event(
             else:
                 db.execute(
                     "INSERT INTO entries "
-                    "(activity_name,energy_before,energy_after,occurred_at,ended_at,created_at) "
-                    "VALUES(?,?,?,?,?,?)",
+                    "(activity_name,energy_before,energy_after,occurred_at,ended_at,created_at,calendar_visible) "
+                    "VALUES(?,?,?,?,?,?,1)",
                     (name, before, after, observed, observed_end, now_utc()),
                 )
         elif event_kind == "recorded":
@@ -163,8 +163,8 @@ def calendar_event(
             else:
                 entry_id = db.execute(
                     "INSERT INTO entries "
-                    "(activity_name,energy_before,energy_after,occurred_at,ended_at,created_at) "
-                    "VALUES(?,?,?,?,?,?)",
+                    "(activity_name,energy_before,energy_after,occurred_at,ended_at,created_at,calendar_visible) "
+                    "VALUES(?,?,?,?,?,?,1)",
                     (name, before, after, observed, observed_end, now_utc()),
                 ).lastrowid
                 db.execute(
@@ -185,8 +185,8 @@ def calendar_event(
             else:
                 entry_id = db.execute(
                     "INSERT INTO entries "
-                    "(activity_name,energy_before,energy_after,occurred_at,ended_at,created_at) "
-                    "VALUES(?,?,?,?,?,?)",
+                    "(activity_name,energy_before,energy_after,occurred_at,ended_at,created_at,calendar_visible) "
+                    "VALUES(?,?,?,?,?,?,1)",
                     (name, before, after, observed, observed_end, now_utc()),
                 ).lastrowid
                 write_exception(

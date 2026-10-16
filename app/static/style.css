@@ -433,3 +433,16 @@ a.settings-gear{
   .shell.wide .daily-energy-remaining{font-size:.65rem;gap:2px}
   .calendar-dialog .activity-suggest-panel{max-height:190px}
 }
+
+/* v0.2.11: remove label clutter and keep both event lines comfortably
+   inside a single 30-minute cell, including the final time baseline. */
+.calendar-event.calendar-event-positioned{
+  top:1px;padding:2px 5px 1px;line-height:1.12
+}
+.calendar-event-positioned .calendar-event-title{
+  display:block;line-height:1.12;margin:0;font-size:.72rem
+}
+.calendar-event-positioned small{
+  display:block;margin-top:1px;line-height:1.1;font-size:.66rem
+}
+.calendar-event-positioned .calendar-event-edit{line-height:1;font-size:.65rem}

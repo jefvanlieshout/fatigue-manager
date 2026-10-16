@@ -1,6 +1,6 @@
 # Fatigue Manager — Handover
 
-Updated: 2026-10-16 — v0.2.10 printed remaining energy.
+Updated: 2026-10-16 — v0.2.11 reference samples and print/layout refinements.
 
 ## Background and core requirement
 
@@ -221,3 +221,18 @@ User and mother requested printing the total energy left **below each weekday na
 - **No schema, security, account, recurrence or GitHub Actions changes**. Requires normal manual update in Fatigue Manager LXC; the assistant has not deployed or executed live browser/print tests.
 
 Run the Python suite locally and smoke-test printing at A4 landscape (100% scale; physical printer borderless support varies).
+
+
+## v0.2.11 — Separate Add Activity reference samples from calendar events (2026-10-16)
+
+User and mother clarified: **Add Activity is an energy reference/index input**. They do not want creating or editing one of these samples to automatically show it in the weekly or printed calendar, or count toward the day's remaining energy. Planner-created or planner-completed events must still appear.
+
+- Schema: **v5→v6**, transactional, idempotent migration in `initialize_planner_database()` after existing v1-v5 migrations. Adds `entries.calendar_visible INTEGER NOT NULL DEFAULT 0 CHECK(...)`. New `/entries` samples are explicitly `0`; `/planner/create`, `/planner/calendar-event`, and `/planner/plans/{id}/complete` actual diary events are explicitly `1`. All calendar-created diary entries continue to contribute to activity medians; reference samples remain in the index/export and contribute to estimates.
+- `week_data()` fetches **only** `calendar_visible=1` diary entries; as a consequence, remaining-energy projections exclude reference samples. `main.activity_rows()` fetches **only** `calendar_visible=0` so the index shows only references. `estimate_stats()` and `suggestions()` still use all entries and plans for better estimates and autocomplete.
+- Legacy migration: known completed one-off activities (`planned_activities.linked_entry_id`) and completed recurring occurrences (`recurring_exceptions.linked_entry_id`) are backfilled to visible=1. **Old directly completed calendar activities without a linked plan are indistinguishable from Add Activity records** and are classified as reference samples (visible=0). Their data are preserved; this limitation is documented to the user. Do not silently delete rows, change dates/values, or guess origins.
+- Older migrations: `main.init_db` accepts 6; `recurrence.init_recurrence_db` accepts 6; `preferences.init_preferences` accepts 6 and only raises user_version from 4 to 5, NEVER downgrades v6.
+- Week UI: removed entire `calendar-legend` with “Planned”, “Completed”, and the sideways-scroll mobile hint; kept the scrollable seven-day grid. `style.css` moves calendar event title/time nearer top and slightly increases available block height via app.js to prevent cropped times.
+- Print UI: removed redundant print-title containing “Weekly planner”/week range, compressed header from 17mm to **10mm**, increased body grid from 181mm to **200mm** (total 210mm = A4 landscape). Keeps seven weekday names, dates and remaining-energy projections; print.js computes event heights from the new row measurement. Print CSS still asks for full A4 and zero margins, subject to printer limits.
+- Browser asset versions bumped to 0.2.11; no GitHub Actions or new LXC.
+- Updated regression tests and new `tests/test_reference_samples.py` verify reference not printed/plotted/counting, planner actual visible and counted, v5 migration/backfill and idempotency, and removal of clutter.
+- Deployment: **back up SQLite to off-LXC storage first**; run `cd /opt/fatigue-manager && bash scripts/update.sh`, then run pytest locally and check a reference sample, planned/recorded calendar entry, and A4 print. `PRAGMA user_version` should report 6. For rollback restore both matching code and v5 DB backup.

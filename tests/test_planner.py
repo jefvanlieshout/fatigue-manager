@@ -38,7 +38,7 @@ def test_migration_to_v3_preserves_existing_entries(tmp_path):
     initialize_planner_database()
     initialize_planner_database()
     with main.connect() as db:
-        assert db.execute("PRAGMA user_version").fetchone()[0] == 5
+        assert db.execute("PRAGMA user_version").fetchone()[0] == 6
         assert db.execute("SELECT activity_name FROM entries").fetchone()[0] == "Original"
 
 

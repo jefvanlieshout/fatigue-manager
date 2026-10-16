@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.2.11 — 2026-10-16
+
+- Changed Add Activity to a historical reference/index: samples are saved and used for estimates, but not displayed or counted as actual calendar events.
+- Introduced SQLite v5→v6 `calendar_visible` classification, automatically keeping previously linked completed plans visible and preserving all legacy data.
+- Adjusted event text/padding to avoid clipping the bottom of the time line.
+- Shortened the A4 print weekday header to 10mm; removed redundant “Weekly planner” heading and week range.
+- Removed Planned/Completed legend and sideways-swiping explanatory text above the week grid.
+- Expanded regression tests and handover; no GitHub Actions.
+
+
 ## v0.2.10 — 2026-10-16
 
 - Added each day's remaining-energy value beneath its name/date on the printed weekly planner.

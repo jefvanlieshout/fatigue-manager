@@ -61,7 +61,7 @@ def init_db() -> None:
     with connect() as db:
         db.execute("PRAGMA journal_mode=WAL")
         version = db.execute("PRAGMA user_version").fetchone()[0]
-        if version > 5:
+        if version > 6:
             raise RuntimeError("Database schema is newer than this app; restore matching code.")
         if version == 0:
             db.execute("""
@@ -139,7 +139,7 @@ def activity_rows(day: date) -> list[dict]:
     start, end = date_bounds(day)
     with connect() as db:
         rows = db.execute(
-            "SELECT * FROM entries WHERE occurred_at >= ? AND occurred_at < ? ORDER BY occurred_at DESC, id DESC",
+            "SELECT * FROM entries WHERE calendar_visible=0 AND occurred_at >= ? AND occurred_at < ? ORDER BY occurred_at DESC, id DESC",
             (start, end),
         ).fetchall()
     return [
@@ -306,8 +306,8 @@ def add_entry(
     ending = actual_end(occurred, ended_at)
     with connect() as db:
         db.execute(
-            "INSERT INTO entries(activity_name,energy_before,energy_after,occurred_at,created_at,ended_at) "
-            "VALUES(?,?,?,?,?,?)",
+            "INSERT INTO entries(activity_name,energy_before,energy_after,occurred_at,created_at,ended_at,calendar_visible) "
+            "VALUES(?,?,?,?,?,?,0)",
             (name, before, after, occurred, datetime.now(timezone.utc).isoformat(), ending),
         )
     day = local_time(occurred).date().isoformat()

@@ -2,7 +2,7 @@
 
 A small, private, mobile-first activity and energy diary (English by default, with Dutch selectable). Designed for people who want to learn what uses or restores their energy, without overwhelming app features.
 
-## Current release: v0.2.10 — printable remaining-energy summaries
+## Current release: v0.2.11 — reference activity library and cleaner calendar printing
 
 - Activity name, starting energy (0–100), ending energy (0–100).
 - Immediate energy-change feedback.
@@ -186,3 +186,14 @@ The **Print Week** page now displays the same estimated energy remaining beneath
 The calculation runs **before filtering by print hours**, so activities outside the printable 07:00–22:00 window still affect the whole-day total. A4 landscape stays full-bleed with zero requested margins; to fit the extra header line, header height increases from 11mm to 17mm and the body grid decreases by 6mm, totaling the same 297 × 210mm page. Screen week, database, and recurring activities are unchanged.
 
 No database migration. `bash scripts/update.sh` remains the manual deployment method. Print assets use `?v=0.2.10` to avoid old cached styles/scripts. Run local tests and check your browser/printer A4 preview; some physical printers require margins despite zero-margin CSS. No GitHub Actions.
+
+
+## v0.2.11 — Reference examples versus real calendar activities
+
+**Add Activity** now stores a reusable, historical energy *reference sample* (name, before and after energy, date). It is retained in the Add Activity index/history and contributes to `estimate_stats()` medians, name suggestions, and exported CSV. It is **not** displayed on the weekly planner, does not appear on the printed week, and does **not** reduce the day's remaining-energy total. Use the Week Planner to create actual calendar events, including completed events.
+
+The SQLite migration **v5→v6** adds `entries.calendar_visible`, separating reference samples (`0`) from events created/completed in the planner (`1`). Existing records are not deleted. It automatically recognizes earlier completed events linked to one-off or recurring plans. **Older standalone completed events that were created directly from the calendar were not labeled differently from Add Activity samples; these are conservatively treated as reference samples during migration**. Their data remain in the database, Add Activity history, energy statistics and export. A future explicit “Move to calendar” action could restore such an item to the timetable without guessing its origin.
+
+UI cleanup: removed the Planned/Completed legend and mobile sideways-swiping instruction. Moved each calendar event's name and time toward the top to avoid the last line clipping. The **A4 printed week** no longer repeats the “Weekly planner” title/date banner (each weekday already shows its own date), and the weekday/remaining-energy header has been reduced to 10mm. The 200mm remainder is used for the time grid, still one A4 landscape page with zero requested CSS margins.
+
+This is a **database migration**, so save and verify an external copy of SQLite before running `bash scripts/update.sh` in the Fatigue Manager LXC. Expect SQLite `PRAGMA user_version` = **6** after restart. New code must not be rolled back onto the v6 database without also restoring the corresponding previous backup. Manual local pytest and browser/print checks are required. GitHub Actions remain disabled.

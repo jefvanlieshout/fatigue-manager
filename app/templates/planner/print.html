@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{{ t('print_week') }} · {{ monday }}</title>
-<link rel="stylesheet" href="/static/print.css?v=0.2.10">
-<script src="/static/print.js?v=0.2.10" defer></script>
+<link rel="stylesheet" href="/static/print.css?v=0.2.11">
+<script src="/static/print.js?v=0.2.11" defer></script>
 </head>
 <body>
 <div class="print-controls">
@@ -16,10 +16,6 @@
 <div class="print-page" id="print-page" data-count="{{ slots|length }}"
      data-low-color="{{ prefs.low_color }}" data-medium-color="{{ prefs.medium_color }}"
      data-high-color="{{ prefs.high_color }}">
-  <div class="print-title">
-    <strong>{{ t('week_title') }}</strong>
-    <span>{{ days[0].date }} — {{ days[6].date }}</span>
-  </div>
   <table class="print-grid">
     <colgroup><col class="time-col">{% for d in days %}<col>{% endfor %}</colgroup>
     <thead>

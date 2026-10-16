@@ -39,10 +39,11 @@ def test_remaining_energy_uses_actual_and_planned_once(tmp_path):
             "token": token, "day": "2026-10-15", "starting_energy": "80",
             "view": "week"
         }, follow_redirects=False).status_code == 303
-        assert client.post("/entries", data={
-            "token": token, "activity_name": "Breakfast",
+        assert client.post("/planner/create", data={
+            "token": token, "day": "2026-10-15",
+            "activity_name": "Breakfast", "planned_time": "08:30",
+            "end_time": "09:00", "mode": "completed",
             "energy_before": "80", "energy_after": "65",
-            "occurred_at": "2026-10-15T08:30"
         }, follow_redirects=False).status_code == 303
         make_plan(client, token, "Walk", "-25")
         make_plan(client, token, "Rest", "10")
