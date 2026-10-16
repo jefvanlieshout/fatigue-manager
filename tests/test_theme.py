@@ -73,7 +73,7 @@ def test_theme_is_manual_and_stored_only_in_browser():
 def test_print_page_remains_on_independent_light_stylesheet():
     print_page = (ROOT / "app/templates/planner/print.html").read_text()
     css = (ROOT / "app/static/print.css").read_text()
-    assert 'href="/static/print.css?v=0.2.12"' in print_page
+    assert 'href="/static/print.css?v=0.2.15"' in print_page
     assert '/static/theme.js' not in print_page
     assert '/static/style.css' not in print_page
     assert 'color:#173427' in css

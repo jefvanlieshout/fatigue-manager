@@ -118,6 +118,6 @@ def test_legend_removed_and_print_header_is_compact(tmp_path):
         assert 'class="print-title"' not in printed
         assert 'class="print-day-name"' in printed
         assert 'class="print-energy-remaining' in printed
-        assert "/static/print.css?v=0.2.11" in printed
+        assert "/static/print.css?v=0.2.15" in printed
     finally:
         client.__exit__(None, None, None)

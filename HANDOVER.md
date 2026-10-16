@@ -1,6 +1,6 @@
 # Fatigue Manager — Handover
 
-Updated: 2026-10-16 — v0.2.14 inclusive To-hour settings.
+Updated: 2026-10-16 — v0.2.15 printer-safe A4 print layout.
 
 ## Background and core requirement
 
@@ -268,3 +268,15 @@ User noted the confusing `To (hour, exclusive)` and wanted midnight selectable. 
 The POST handler `app/settings_routes.py::update_settings` converts submitted inclusive values back into the existing exclusive storage (`day_end + 1`, `print_end + 1`) before calling `save_preferences` and existing range validation. Crucially: **do not convert values in `calendar_week`, `load_preferences`, or the client time-line**; all consume exclusive end boundaries as before. A stored end 23 is presented as To 22 and renders slots through 22:30, preserving prior settings. A selected To 23 is stored as 24 and renders through 23:30. From 0 To 0 stores [0,1) and renders 00:00/00:30. Existing DB remains schema v6, no migration, no GitHub Actions. Week modal and no-JS standalone fallback both use the shared partial.
 
 Regression tests in `tests/test_calendar_preferences.py` verify old-setting round trips, saved exclusive boundaries, both To=0 and To=23, 48-slot full-day print, invalid ranges returning HTTP 422 without saving, and parity between screen and print. Before releasing, run local pytest and check the browser's settings gear / print view.
+
+
+## v0.2.15 — Fix clipping from physical printer margins (2026-10-16)
+
+User found ~5mm printer nonprintable edges cutting off weekday names, side cells, and the bottom of printed weekly calendars (07:00–21:30). Root cause: `print.css` placed the full 297×210mm grid directly at the physical page edges with `@page margin:0`; ordinary printers cannot print edge-to-edge.
+
+- `app/static/print.css`: Keep the full 297×210mm physical A4 page in landscape, **inset all calendar content by 7mm** via `.print-page{padding:7mm}` in normal and print views. The table is now **283mm wide** with a 12mm time column, and seven day columns sharing 271mm. Effective usable vertical space is 196mm: 10mm weekday/remaining-energy heading and 186mm timetable. White edge protects print content from normal hardware printer margins.
+- `app/static/print.js`: Row height becomes `186 / count` millimeters, with all event positions using it. **30 rows** (From 7, To 21, inclusive = 07:00 to 21:30) yield 6.2mm each and keep **7.5pt names / 6pt times**. Dense grids shrink only print event type when per-row height falls below 5.6mm, and again below 4.5mm for 24-hour/48-row sheets.
+- `app/templates/planner/print.html`: Cache versions for print CSS/JS are `0.2.15`.
+- `app/i18n.py`: English and Dutch on-screen print tips now say **A4 landscape, 100%, no browser margins, headers/footers off**. Avoid Fill Page; browser Fit to printable area only if needed on an unusual printer. Enable Background graphics for color coding.
+- Updated simple static tests for margins, row geometry, density, and print assets; also refreshed older regression assertions with stale CSS cache versions.
+- No database migration, activity changes, interactive calendar styling changes, external packages, live LXC updates, or GitHub Actions. Deploy with existing user-controlled `bash scripts/update.sh`. Confirm via the browser preview and one physical printer/PDF test; print capabilities vary by driver.

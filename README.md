@@ -2,7 +2,7 @@
 
 A small, private, mobile-first activity and energy diary (English by default, with Dutch selectable). Designed for people who want to learn what uses or restores their energy, without overwhelming app features.
 
-## Current release: v0.2.14 — inclusive calendar-hour settings
+## Current release: v0.2.15 — printer-safe A4 margins
 
 - Activity name, starting energy (0–100), ending energy (0–100).
 - Immediate energy-change feedback.
@@ -223,3 +223,14 @@ The Calendar Settings dialog and its standalone fallback now show **From (hour)*
 Internally, the stored `day_end` and `print_end` remain *exclusive* so existing calendars, current-time display, and A4 print row sizing continue working. The form displays each saved end as `end - 1` and adds 1 on save. **Existing settings are preserved without reinterpreting their saved hours**, and invalid ranges still return HTTP 422.
 
 No database migration, no print or screen layout changes, no GitHub Actions. Run `cd /opt/fatigue-manager && bash scripts/update.sh` and verify midnight and end-of-day selections in both Week Planner and Print Week.
+
+
+## v0.2.15 — Avoid clipping on ordinary A4 printers
+
+The printed week previously filled the entire physical A4 sheet (297 × 210mm) with no content inset. Ordinary printers commonly leave an unprintable edge (~5mm), so weekday names and the first/last calendar columns or bottom rows could be clipped even when the browser preview appeared correct.
+
+The dedicated print layout now keeps a **7mm white safety margin on all four sides**. The table is **283mm wide** (12mm time column + seven equal columns sharing 271mm), with a 10mm weekday header and **186mm** for hourly rows in the usable **196mm** height. The JavaScript recalculates row height as `186 / number_of_half_hour_slots`. A standard **07:00–21:30** print uses 30 slots, so each is 6.2mm and retains the legible 7.5pt name / 6pt time typography. Only very dense ranges use automatically reduced print-only text, to avoid cropping when including the full 24 hours.
+
+**Print settings:** A4; landscape; **100% scale / Actual size**; **Margins: None** (the page itself supplies the safe inset); **headers/footers disabled**; background graphics enabled if you want colored energy blocks. Do not use *Fill page* or borderless enlargement, which can trim content. *Fit to printable area* is a fallback if the printer clips even with the internal safe inset.
+
+No changes to the on-screen calendar, stored time ranges, database (schema v6), or GitHub Actions. Deploy by pulling the latest source via `cd /opt/fatigue-manager && bash scripts/update.sh`, then inspect one print preview / PDF or actual print.

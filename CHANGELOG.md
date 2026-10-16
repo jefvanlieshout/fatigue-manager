@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.2.15 — 2026-10-16
+
+- Added a 7mm white safety inset to printed A4 weeks, protecting weekday names, outer columns and bottom slots from the ~5mm unprintable border of ordinary printers.
+- Rebalanced the print table to 283mm wide and the hourly grid to 186mm high, keeping typical 07:00–21:30 activities at their larger print-only text sizes.
+- Adaptively shrink activity text for very dense print ranges; clarified A4 landscape, actual-size, margin-free print settings in English and Dutch.
+- Updated print asset cache versions, related tests, changelog and handover. No database migration or GitHub Actions.
+
+
 ## v0.2.14 — 2026-10-16
 
 - Changed Calendar Settings “To” hours to inclusive for both screen and print, with English/Dutch guidance.

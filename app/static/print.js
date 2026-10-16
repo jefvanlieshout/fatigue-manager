@@ -2,8 +2,12 @@
 document.addEventListener("DOMContentLoaded", () => {
   const page = document.getElementById("print-page");
   const count = Number(page.dataset.count) || 30;
-  const rowMm = 200 / count; // 10mm weekday header + 200mm grid = full 210mm
+  const rowMm = 186 / count; // 7mm top + 10mm header + 186mm grid + 7mm bottom = 210mm
   page.style.setProperty("--row-height", rowMm + "mm");
+  // Keep 7.5pt names and 6pt times for ordinary 07:00–21:30 weeks.
+  // Denser ranges need smaller text to fit 30-minute slots on one A4 page.
+  page.classList.toggle("print-compact", rowMm < 5.6);
+  page.classList.toggle("print-dense", rowMm < 4.5);
   const palette = {
     "energy-low": page.dataset.lowColor, "energy-medium": page.dataset.mediumColor,
     "energy-high": page.dataset.highColor, "energy-restored": "#579cc4",

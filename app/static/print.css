@@ -4,10 +4,10 @@ body{margin:0;background:#e9eeeb}
 .print-controls{padding:12px;display:flex;gap:16px;align-items:center;justify-content:center;font-size:14px}
 .print-controls a{color:#1c6644}
 .print-controls button{cursor:pointer;border:0;border-radius:8px;background:#28634b;color:white;padding:10px 22px;font:inherit}
-.print-page{width:297mm;height:210mm;margin:auto;background:white;overflow:hidden;padding:0;--row-height:6mm;box-shadow:0 1px 15px #bac8bc}
-.print-grid{width:297mm;height:auto;table-layout:fixed;border-collapse:collapse;border-spacing:0}
+.print-page{width:297mm;height:210mm;margin:auto;background:white;overflow:hidden;padding:7mm;--row-height:6mm;box-shadow:0 1px 15px #bac8bc}
+.print-grid{width:283mm;height:auto;table-layout:fixed;border-collapse:collapse;border-spacing:0}
 .print-grid .time-col{width:12mm}
-.print-grid col:not(.time-col){width:calc(285mm / 7)}
+.print-grid col:not(.time-col){width:calc(271mm / 7)}
 .print-grid th,.print-grid td{border-right:.15mm solid #c8d4cc;border-bottom:.12mm solid #d6e1da;padding:0;box-sizing:border-box}
 .print-grid thead th{height:10mm;max-height:10mm;background:#edf4ee;font-size:8pt;text-align:center;vertical-align:middle;line-height:1.05;padding:.35mm .3mm}
 .print-grid thead th small{display:block;font-weight:400;font-size:6pt}
@@ -27,7 +27,7 @@ body{margin:0;background:#e9eeeb}
 @media print{
   html,body{margin:0!important;padding:0!important;width:297mm;height:210mm;overflow:hidden;background:white}
   .print-controls{display:none}
-  .print-page{margin:0;width:297mm;height:210mm;box-shadow:none}
+  .print-page{margin:0;width:297mm;height:210mm;padding:7mm;box-shadow:none}
   .print-grid th,.print-grid td,.print-event{
     -webkit-print-color-adjust:exact;print-color-adjust:exact;
   }
@@ -44,3 +44,13 @@ body{margin:0;background:#e9eeeb}
 /* v0.2.11: weekday/energy header 10mm; the timetable gets full remaining 200mm. */
 
 /* v0.2.12: print-only larger event typography; screen calendar is unchanged. */
+
+/* v0.2.15: real-world printers usually have a 3–6mm unprintable rim.
+   Keep all content 7mm in from A4's edges, even at 100% print scale.
+   A4 297x210 -> safe 283x196; header 10 + timetable 186 = 196mm. */
+.print-page.print-compact .print-event,
+.print-page.print-compact .print-event strong{font-size:6.2pt;line-height:1.03}
+.print-page.print-compact .print-event small{font-size:5pt;line-height:1.02}
+.print-page.print-dense .print-event,
+.print-page.print-dense .print-event strong{font-size:5pt;line-height:1.02}
+.print-page.print-dense .print-event small{font-size:4pt;line-height:1.02}

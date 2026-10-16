@@ -214,8 +214,8 @@ def test_print_week_shows_same_daily_remaining_energy_as_calendar(tmp_path):
         assert 'class="print-title"' not in printed.text
         assert 'data-count="30"' in printed.text
         assert 'class="remaining-unknown"' not in printed.text
-        assert "/static/print.css?v=0.2.12" in printed.text
-        assert "/static/print.js?v=0.2.11" in printed.text
+        assert "/static/print.css?v=0.2.15" in printed.text
+        assert "/static/print.js?v=0.2.15" in printed.text
         screen = client.get("/planner/week?week=2026-10-14").text
         assert 'class="remaining-value">≈45</span>' in screen
     finally:
@@ -233,7 +233,7 @@ def test_print_energy_summary_keeps_a4_full_bleed_dimensions():
     ).read_text()
     assert "@page{size:A4 landscape;margin:0}" in css
     assert "height:10mm" in css
-    assert "const rowMm = 200 / count;" in js
+    assert "const rowMm = 186 / count;" in js
     assert 'class="print-energy-remaining' in template
     assert "d.projection.is_estimate" in template
 
@@ -249,7 +249,7 @@ def test_print_only_activity_fonts_are_larger():
     assert "margin-top:.05mm;font-size:6pt" in print_css
     assert ".print-event[data-span=\"1\"] strong" in print_css
     assert "padding:.08mm .35mm" in print_css
-    assert 'print.css?v=0.2.12' in print_template
+    assert 'print.css?v=0.2.15' in print_template
     # Normal screen calendar keeps its existing independent styling.
     assert ".calendar-event-positioned" in web_css
     assert "font-size:.72rem" in web_css
@@ -331,3 +331,22 @@ def test_inclusive_hour_settings_reject_invalid_ranges(tmp_path):
         assert "To (hour, inclusive)" in week_html
     finally:
         client.__exit__(None, None, None)
+
+
+def test_printable_a4_has_safe_margins_for_non_borderless_printers():
+    """07:00–21:30 prints at normal type size within a physical A4 sheet."""
+    from pathlib import Path
+    folder = Path(__file__).resolve().parents[1] / "app" / "static"
+    css = (folder / "print.css").read_text()
+    js = (folder / "print.js").read_text()
+    assert ".print-page{width:297mm;height:210mm" in css
+    assert "overflow:hidden;padding:7mm" in css
+    assert ".print-grid{width:283mm" in css
+    assert "width:calc(271mm / 7)" in css
+    assert "const rowMm = 186 / count;" in js
+    assert 'page.classList.toggle("print-compact", rowMm < 5.6)' in js
+    assert 'page.classList.toggle("print-dense", rowMm < 4.5)' in js
+    assert 7 + 10 + 186 + 7 == 210
+    assert 297 - 2 * 7 == 283
+    assert 186 / 30 > 5.6  # Usual 07:00–21:30 retains 7.5pt and 6pt.
+    assert 186 / 48 < 4.5  # Dense 24h layouts get smaller text.
