@@ -446,3 +446,169 @@ a.settings-gear{
   display:block;margin-top:1px;line-height:1.1;font-size:.66rem
 }
 .calendar-event-positioned .calendar-event-edit{line-height:1;font-size:.65rem}
+
+/* v0.2.13 — manually selected night mode. No prefers-color-scheme or timers.
+   The printable A4 view has its own LIGHT print.css and is not modified. */
+.theme-toggle{
+  display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;
+  width:40px;height:40px;min-width:40px;padding:0;border:1px solid var(--line);
+  border-radius:11px;background:var(--surface);color:var(--green);
+  font:inherit;font-size:1.36rem;line-height:1;cursor:pointer
+}
+.theme-toggle:hover{background:#e5f1e8}
+.theme-icon-sun{display:none}
+html[data-theme="dark"] .theme-icon-moon{display:none}
+html[data-theme="dark"] .theme-icon-sun{display:inline}
+@media(max-width:750px){
+  .shell.wide .theme-toggle{width:35px;height:35px;min-width:35px;font-size:1.2rem}
+}
+@media(max-width:420px){
+  .header-actions{gap:7px}
+  .theme-toggle{width:36px;height:36px;min-width:36px}
+}
+
+html[data-theme="dark"]{
+  color-scheme:dark;
+  --ink:#e5f1e9;
+  --muted:#b4c7bb;
+  --line:#354a43;
+  --back:#101b1c;
+  --surface:#1a2a2b;
+  --green:#91dbb0;
+  --green-dark:#72cba1;
+  --red:#ff9a9b;
+}
+html[data-theme="dark"] body{background:var(--back);color:var(--ink)}
+html[data-theme="dark"] .brand-mark{background:#264639;color:#a3ebbb}
+html[data-theme="dark"] .panel{
+  background:var(--surface);border-color:var(--line);
+  box-shadow:0 6px 22px rgba(0,0,0,.12)
+}
+html[data-theme="dark"] .theme-toggle{
+  background:#24383a;color:#ffe39c;border-color:#4a6259
+}
+html[data-theme="dark"] .theme-toggle:hover,
+html[data-theme="dark"] .settings-gear:hover,
+html[data-theme="dark"] .settings-gear:focus-visible{background:#304a46}
+html[data-theme="dark"] input[type="text"],
+html[data-theme="dark"] input[type="password"],
+html[data-theme="dark"] input[type="datetime-local"],
+html[data-theme="dark"] input[type="date"],
+html[data-theme="dark"] input[type="time"],
+html[data-theme="dark"] input[type="number"],
+html[data-theme="dark"] select,
+html[data-theme="dark"] textarea{
+  background:#243536;border-color:#4c645b;color:var(--ink)
+}
+html[data-theme="dark"] input::placeholder{color:#b0c1b4}
+html[data-theme="dark"] input:focus-visible,
+html[data-theme="dark"] button:focus-visible,
+html[data-theme="dark"] a:focus-visible,
+html[data-theme="dark"] summary:focus-visible,
+html[data-theme="dark"] select:focus-visible{outline-color:#a9ebc7}
+html[data-theme="dark"] .primary{
+  background:#337e5e;color:#fff
+}
+html[data-theme="dark"] .primary:hover{background:#40946e}
+html[data-theme="dark"] .energy-result,
+html[data-theme="dark"] .day-arrow,
+html[data-theme="dark"] .date-go,
+html[data-theme="dark"] .small-save,
+html[data-theme="dark"] .status-pill,
+html[data-theme="dark"] .recurrence-weekdays label{
+  background:#243d36;color:var(--ink);border-color:var(--line)
+}
+html[data-theme="dark"] .small-save:hover,
+html[data-theme="dark"] .date-go:hover{background:#365348}
+html[data-theme="dark"] .delta{background:#2a3d3a}
+html[data-theme="dark"] .delta.negative{background:#4a2d32;color:#ffadb0}
+html[data-theme="dark"] .delta.positive{background:#244537;color:#a1ebc1}
+html[data-theme="dark"] .entry-actions .danger-link,
+html[data-theme="dark"] .error{color:#ffb1b4}
+html[data-theme="dark"] .energy-bar{background:#273e38}
+html[data-theme="dark"] .energy-bar>div{background:#5eb68a}
+html[data-theme="dark"] .planned-dot{background:#7bbf9a}
+
+/* Week calendar: dark grid, sticky headers, selected slots and event cards. */
+html[data-theme="dark"] .calendar-scroll{
+  background:#172628;border-color:#3c544d;
+  scrollbar-color:#57746a #172628
+}
+html[data-theme="dark"] .calendar-table th,
+html[data-theme="dark"] .calendar-table td{
+  border-right-color:#344842;border-bottom-color:#30413e
+}
+html[data-theme="dark"] .calendar-table thead th{
+  background:#213635;border-bottom-color:#4e665a
+}
+html[data-theme="dark"] .calendar-hour{background:#213635;color:#c2d4c7}
+html[data-theme="dark"] .calendar-half-hour .calendar-hour{color:#aabdb1}
+html[data-theme="dark"] .calendar-whole-hour .calendar-cell,
+html[data-theme="dark"] .calendar-whole-hour .calendar-hour{
+  border-top-color:#567269
+}
+html[data-theme="dark"] .calendar-day-head.calendar-today{
+  background:#284b3b!important
+}
+html[data-theme="dark"] .calendar-day-head.calendar-today .calendar-day-link strong{
+  color:#b3f4c5!important
+}
+html[data-theme="dark"] .calendar-day-link span{color:#c5d3cb}
+html[data-theme="dark"] .calendar-slot-add{color:#80b69b}
+html[data-theme="dark"] .calendar-slot-add:hover,
+html[data-theme="dark"] .calendar-slot-add:focus-visible{
+  background:#2b4c3e;color:#d5ffe5
+}
+html[data-theme="dark"] .calendar-slot-add.slot-selected{
+  background:#376447;color:#fff;box-shadow:inset 0 0 0 2px #92d1aa
+}
+html[data-theme="dark"] .calendar-untimed{border-top-color:#526c60}
+html[data-theme="dark"] .calendar-event.event-planned{background:#234236}
+html[data-theme="dark"] .calendar-event.event-completed{background:#332e4a}
+html[data-theme="dark"] .calendar-event.energy-unknown{background:#2a383b}
+html[data-theme="dark"] .calendar-event-title{color:#edf8f1}
+html[data-theme="dark"] .calendar-event small,
+html[data-theme="dark"] .calendar-event-edit{color:#d2e0d6}
+html[data-theme="dark"] .calendar-event:hover{filter:brightness(1.13)}
+html[data-theme="dark"] .calendar-energy-inline input[type="number"],
+html[data-theme="dark"] .calendar-energy-controls input,
+html[data-theme="dark"] .number-action input{background:#243536;border-color:#597367;color:var(--ink)}
+html[data-theme="dark"] .daily-energy-remaining{color:#a1e4b8}
+html[data-theme="dark"] .daily-energy-remaining.energy-overbooked{color:#ffadb0}
+
+/* Quick add/edit dialogs and previous-activity suggestions. */
+html[data-theme="dark"] .calendar-dialog{
+  background:#1b2c2c;border-color:#52665e;color:var(--ink);
+  box-shadow:0 24px 70px rgba(0,0,0,.6)
+}
+html[data-theme="dark"] .calendar-dialog::backdrop{background:rgba(3,8,9,.78)}
+html[data-theme="dark"] .calendar-dialog input[type="date"],
+html[data-theme="dark"] .calendar-dialog input[type="time"],
+html[data-theme="dark"] .calendar-dialog input[type="number"],
+html[data-theme="dark"] .calendar-dialog select{
+  background:#243536;color:var(--ink);border-color:#597367
+}
+html[data-theme="dark"] .calendar-close{background:#314845;color:var(--ink)}
+html[data-theme="dark"] .calendar-close:hover{background:#426357}
+html[data-theme="dark"] .calendar-dialog #quick-actual-fields{background:#293e39}
+html[data-theme="dark"] .calendar-danger{
+  background:#482d33;border-color:#925f66;color:#ffc6c8
+}
+html[data-theme="dark"] .calendar-danger:hover{background:#633941}
+html[data-theme="dark"] .recurrence-weekdays label{background:#2a403a;border-color:#4b6458}
+html[data-theme="dark"] .settings-grid input{background:#26383a;color:var(--ink);border-color:#567067}
+html[data-theme="dark"] .calendar-dialog .activity-suggest-panel{
+  background:#213637;border-color:#4e6a5f;
+  box-shadow:0 14px 30px rgba(0,0,0,.45)
+}
+html[data-theme="dark"] .calendar-dialog .activity-suggest-caption{color:#bed1c4}
+html[data-theme="dark"] .calendar-dialog .activity-suggest-option{color:#e9f4eb}
+html[data-theme="dark"] .calendar-dialog .activity-suggest-option:hover,
+html[data-theme="dark"] .calendar-dialog .activity-suggest-option:focus-visible{
+  background:#35544a;outline-color:#91dbb0
+}
+html[data-theme="dark"] .calendar-dialog .activity-suggest-option .suggest-arrow{color:#b3d5c1}
+html[data-theme="dark"] .activity-suggest-panel,
+html[data-theme="dark"] .activity-suggest-option{background:#213637;color:var(--ink)}
+html[data-theme="dark"] .activity-suggest-option:hover{background:#35544a}
+html[data-theme="dark"] .calendar-now-marker{background:#ff6778}

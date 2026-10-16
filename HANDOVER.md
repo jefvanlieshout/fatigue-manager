@@ -1,6 +1,6 @@
 # Fatigue Manager — Handover
 
-Updated: 2026-10-16 — v0.2.12 print-only activity font enlargement.
+Updated: 2026-10-16 — v0.2.13 manual sun/moon night mode.
 
 ## Background and core requirement
 
@@ -245,3 +245,17 @@ User and mother wanted to use the spare vertical space in printed events for mor
 - Print CSS URL changed to `?v=0.2.12`; print JS unchanged.
 - No database schema update (still v6), no new LXC/services, no GitHub Actions or account changes.
 - Deploy manually using the established LXC update script. Verify output in actual A4 landscape print preview, especially one-slot entries, overlap lanes and long names. Browser PDF/physical printer rendering has not been confirmed by the assistant.
+
+## v0.2.13 — User-controlled night mode (2026-10-16)
+
+User and mother requested a clearly visible **sun/moon header toggle** because the bright interface is uncomfortable at night. Explicit requirement: **do NOT switch automatically**.
+
+- `app/templates/base.html`: sun/moon button appears consistently on login, tracker/index, Week Planner and settings, adjacent to language selector; localized `aria-label`/title and `aria-pressed`. A dedicated same-origin `/static/theme.js?v=0.2.13` is loaded synchronously **in the head BEFORE the main stylesheet** to apply a stored preference before first render. `style.css` and `app.js` versioned asset URLs also bump to 0.2.13.
+- `app/static/theme.js` (new): stores only `dark`/`light` in browser-local `localStorage` key `fatigue-manager-theme`; defaults to light; no time detection, OS color-scheme detection, scheduling or external requests. If storage fails, manual toggle works in the current page view. Updates `html[data-theme]`, button accessible label/pressed state, and browser theme-color meta; watches storage changes so tabs remain synchronized.
+- `app/static/style.css`: `html[data-theme="dark"]` adds an accessible low-glare palette across body, panels, text, fields, buttons, calendar cells/sticky headers, activity cards, now line, today's green highlight, dialogs, autocomplete, remaining energy, planner and index. Includes responsive toggle sizing in the existing crowded mobile header. Dark styles are placed **after** prior styles so CSS precedence overrides hard-coded backgrounds while allowing custom activity-energy palette colors.
+- `app/i18n.py`: new English/Dutch labels for Switch to dark/light.
+- The print template uses **only** `app/static/print.css` and `print.js`, so print pages stay light (A4, readable, without dark ink usage) regardless of website theme.
+- New `tests/test_theme.py`: toggle visible on login and authenticated routes, early theme script load, correct localized/accessibility content, manual local persistence, no automatic behavior, dark coverage of main views, and independent light print.
+- No database or API migration (schema **v6**), added packages, separate LXC, telemetry, third-party assets, GitHub Actions, or user/health data in repository.
+
+Deployment remains manual: back up as normally, run `cd /opt/fatigue-manager && bash scripts/update.sh`. Verify sun/moon toggle, refresh persistence, phone layout, the dialog and calendar colors, login, and printed A4 paper. Only static/source tests were possible here; actual browser/visual contrast checks should be performed on a real phone/desktop.

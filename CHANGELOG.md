@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.2.13 — 2026-10-16
+
+- Added a visible moon/sun toggle in the header, including the login screen, for user-controlled dark/light mode.
+- Remember theme choice in browser-local storage; no automatic switching from OS preference or time of day.
+- Styled the calendar, event cards, forms, dialogs, autocomplete, navigation and energy summaries for low-glare dark mode.
+- Load same-origin theme bootstrap before CSS to prevent bright flash; keep printed A4 calendar on its own light stylesheet.
+- Added English/Dutch accessible labels and local regression tests. No database migration, third-party dependencies or GitHub Actions.
+
+
 ## v0.2.12 — 2026-10-16
 
 - Increased printed calendar activity-name font from 5.5 to 7.5 pt and time from 4.6 to 6 pt.

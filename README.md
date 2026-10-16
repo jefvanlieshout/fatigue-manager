@@ -2,7 +2,7 @@
 
 A small, private, mobile-first activity and energy diary (English by default, with Dutch selectable). Designed for people who want to learn what uses or restores their energy, without overwhelming app features.
 
-## Current release: v0.2.12 — larger activity typography on A4 printouts
+## Current release: v0.2.13 — manual night mode
 
 - Activity name, starting energy (0–100), ending energy (0–100).
 - Immediate energy-change feedback.
@@ -204,3 +204,13 @@ This is a **database migration**, so save and verify an external copy of SQLite 
 Only the dedicated A4 landscape print stylesheet changed: **activity names grow from 5.5 pt to 7.5 pt**, and **activity times grow from 4.6 pt to 6 pt**. Internal padding and line spacing were tightened slightly so both lines fit comfortably in short (30-minute) entries. For single-slot entries, long activity names are limited to one line with an ellipsis to leave room for the time; longer appointments retain wrapping. The interactive Week Planner typography and sizing in `style.css` are not changed.
 
 The print CSS link now uses `?v=0.2.12` to avoid cached styles. Print hours and A4 page dimensions remain unchanged. No database migration, new dependencies or GitHub Actions. Run `bash scripts/update.sh` in the existing LXC, open **Print Week** and inspect print preview at A4 landscape, 100% scale. Try a short 30-minute event as well as a longer event; browser/printer rendering can vary.
+
+## v0.2.13 — Manual light/dark mode
+
+Use the **moon (☾)** button in the header to switch to dark mode, and the **sun (☀)** button to return to the light theme. This is a **manual choice only**: the site will never change theme based on local time, sunset, or operating-system settings. The choice is remembered in `localStorage` under `fatigue-manager-theme`, separately for each browser/device (no account settings, cookies, or backend/database changes). If browser storage is unavailable, the toggle still works during the current page view.
+
+The light/dark switch appears on the login page and every authenticated page, including Add Activity, Week Planner, Day, and Settings. The dark palette covers page backgrounds, panels, input fields, buttons, the calendar's sticky weekday/time headers and event cards, activity autocomplete, modals, settings, remaining-energy labels, and the green highlight for today. Switching themes does not change diary content, event colors/energy thresholds, or any stored energy data.
+
+The **Print Week** page deliberately retains its separate light A4 stylesheet to avoid printing dark backgrounds or consuming extra ink. The dark preference applies only to the website. A small external, self-hosted `app/static/theme.js` runs before the main stylesheet to avoid flashing a bright page when reloading at night, and updates the phone browser's theme-color metadata. CSP remains `script-src 'self'`, with no inline scripts, trackers, external assets, network calls, or GitHub Actions.
+
+No database migration: SQLite remains **v6**. Update manually with `cd /opt/fatigue-manager && bash scripts/update.sh`, refresh the browser and test switching modes on desktop and mobile, reloading the page, logging out/in, and Print Week.

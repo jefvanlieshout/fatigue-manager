@@ -5,8 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#edf5f0">
   <title>{% block title %}{{ t('brand') }}{% endblock %}</title>
-  <link rel="stylesheet" href="/static/style.css?v=0.2.11">
-  <script src="/static/app.js?v=0.2.11" defer></script>
+  <script src="/static/theme.js?v=0.2.13"></script>
+  <link rel="stylesheet" href="/static/style.css?v=0.2.13">
+  <script src="/static/app.js?v=0.2.13" defer></script>
 </head>
 <body>
   <div class="shell {% block shell_class %}{% endblock %}">
@@ -25,6 +26,14 @@
         <a class="settings-gear" href="/planner/settings?week={{ monday }}" id="calendar-settings-button" title="{{ t('calendar_settings') }}" aria-label="{{ t('calendar_settings') }}">⚙</a>
         {% endif %}
         {% endif %}
+        <button type="button" class="theme-toggle" id="theme-toggle"
+          data-dark-label="{{ t('enable_dark_mode') }}"
+          data-light-label="{{ t('enable_light_mode') }}"
+          aria-label="{{ t('enable_dark_mode') }}" aria-pressed="false"
+          title="{{ t('enable_dark_mode') }}">
+          <span class="theme-icon-moon" aria-hidden="true">☾</span>
+          <span class="theme-icon-sun" aria-hidden="true">☀</span>
+        </button>
         <form class="lang-form" action="/language" method="post" aria-label="{{ t('language') }}">
           <input type="hidden" name="token" value="{{ csrf }}">
           <input type="hidden" name="return_to" value="{{ request.url.path }}">
