@@ -52,8 +52,8 @@ def test_settings_authentication_and_persistence(tmp_path):
         })
         assert unauthorized.status_code == 403
         update = {**DEFAULTS, "low_max": 12, "medium_max": 25,
-                  "day_start": 8, "day_end": 21,
-                  "print_start": 9, "print_end": 20,
+                  "day_start": 8, "day_end": 20,
+                  "print_start": 9, "print_end": 19,
                   "low_color": "#228844"}
         saved = client.post("/planner/settings", data={
             "token": csrf, "week": "2026-10-13", **update
@@ -253,3 +253,81 @@ def test_print_only_activity_fonts_are_larger():
     # Normal screen calendar keeps its existing independent styling.
     assert ".calendar-event-positioned" in web_css
     assert "font-size:.72rem" in web_css
+
+
+def test_inclusive_hour_settings_allow_midnight_and_full_day(tmp_path):
+    """The displayed To hour is included while stored ranges stay exclusive."""
+    client, token = login(tmp_path)
+    try:
+        # Old settings are stored with an exclusive end; the form must show
+        # the last visible hour without silently changing existing settings.
+        current = client.get("/planner/settings?week=2026-10-14")
+        assert current.status_code == 200
+        assert 'name="day_end" min="0" max="23" value="22"' in current.text
+        assert 'name="print_end" min="0" max="23" value="21"' in current.text
+
+        full = client.post("/planner/settings", data={
+            "token": token, "week": "2026-10-14",
+            **DEFAULTS, "day_start": 0, "day_end": 23,
+            "print_start": 0, "print_end": 23,
+        }, follow_redirects=False)
+        assert full.status_code == 303
+        prefs = load_preferences()
+        assert (prefs["day_start"], prefs["day_end"]) == (0, 24)
+        assert (prefs["print_start"], prefs["print_end"]) == (0, 24)
+        html = client.get("/planner/week?week=2026-10-14").text
+        assert 'data-day="2026-10-14" data-time="00:00"' in html
+        assert 'data-day="2026-10-14" data-time="00:30"' in html
+        assert 'data-day="2026-10-14" data-time="23:00"' in html
+        assert 'data-day="2026-10-14" data-time="23:30"' in html
+        assert 'data-time="24:00"' not in html
+        print_html = client.get("/planner/print?week=2026-10-14").text
+        assert 'data-count="48"' in print_html
+        assert "23:30" in print_html
+        settings = client.get("/planner/settings?week=2026-10-14").text
+        assert 'name="day_end" min="0" max="23" value="23"' in settings
+        assert 'name="print_end" min="0" max="23" value="23"' in settings
+
+        # Single-hour 00:00–00:59 also works for both calendars.
+        one = client.post("/planner/settings", data={
+            "token": token, "week": "2026-10-14",
+            **DEFAULTS, "day_start": 0, "day_end": 0,
+            "print_start": 0, "print_end": 0,
+        }, follow_redirects=False)
+        assert one.status_code == 303
+        prefs = load_preferences()
+        assert (prefs["day_start"], prefs["day_end"]) == (0, 1)
+        assert (prefs["print_start"], prefs["print_end"]) == (0, 1)
+        midnight = client.get("/planner/week?week=2026-10-14").text
+        assert 'data-day="2026-10-14" data-time="00:00"' in midnight
+        assert 'data-day="2026-10-14" data-time="00:30"' in midnight
+        assert 'data-day="2026-10-14" data-time="01:00"' not in midnight
+        assert 'data-count="2"' in client.get("/planner/print?week=2026-10-14").text
+    finally:
+        client.__exit__(None, None, None)
+
+
+def test_inclusive_hour_settings_reject_invalid_ranges(tmp_path):
+    client, token = login(tmp_path)
+    try:
+        before = load_preferences()
+        for values in (
+            {"day_start": 23, "day_end": 22},
+            {"day_start": 0, "day_end": 24},
+            {"print_start": 23, "print_end": 22},
+            {"print_start": 0, "print_end": 24},
+        ):
+            response = client.post("/planner/settings", data={
+                "token": token, "week": "2026-10-14",
+                **DEFAULTS, **values,
+            }, follow_redirects=False)
+            assert response.status_code == 422
+            assert load_preferences() == before
+
+        # The same form renders in the gear modal and fallback settings page.
+        week_html = client.get("/planner/week?week=2026-10-14").text
+        assert 'name="day_end" min="0" max="23" value="22"' in week_html
+        assert 'name="print_end" min="0" max="23" value="21"' in week_html
+        assert "To (hour, inclusive)" in week_html
+    finally:
+        client.__exit__(None, None, None)

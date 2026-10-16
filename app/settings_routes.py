@@ -33,10 +33,13 @@ def update_settings(request: Request, token: str = Form(...), week: str = Form(.
         return response
     check_csrf(request, token)
     selected = parsed_day(week)
+    # The form shows inclusive final hours (0–23), while the grid uses
+    # Python's exclusive end range. "To 23" therefore includes 23:30 and
+    # ends at midnight (24:00), without ever creating a 24:00 time slot.
     save_preferences(dict(low_max=low_max, medium_max=medium_max,
         low_color=low_color, medium_color=medium_color, high_color=high_color,
-        day_start=day_start, day_end=day_end,
-        print_start=print_start, print_end=print_end))
+        day_start=day_start, day_end=day_end + 1,
+        print_start=print_start, print_end=print_end + 1))
     return RedirectResponse("/planner/week?week=" + selected.isoformat(), status_code=303)
 
 @router.get("/print")

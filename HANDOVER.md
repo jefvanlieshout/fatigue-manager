@@ -1,6 +1,6 @@
 # Fatigue Manager — Handover
 
-Updated: 2026-10-16 — v0.2.13 manual sun/moon night mode.
+Updated: 2026-10-16 — v0.2.14 inclusive To-hour settings.
 
 ## Background and core requirement
 
@@ -259,3 +259,12 @@ User and mother requested a clearly visible **sun/moon header toggle** because t
 - No database or API migration (schema **v6**), added packages, separate LXC, telemetry, third-party assets, GitHub Actions, or user/health data in repository.
 
 Deployment remains manual: back up as normally, run `cd /opt/fatigue-manager && bash scripts/update.sh`. Verify sun/moon toggle, refresh persistence, phone layout, the dialog and calendar colors, login, and printed A4 paper. Only static/source tests were possible here; actual browser/visual contrast checks should be performed on a real phone/desktop.
+
+
+## v0.2.14 — Inclusive end-hour settings (2026-10-16)
+
+User noted the confusing `To (hour, exclusive)` and wanted midnight selectable. The shared `app/templates/planner/_settings_form.html` now uses `To (hour, inclusive)`, numeric 0–23, displaying persisted `prefs.day_end - 1` and `prefs.print_end - 1` for both calendar-visible and print-visible hours. An English/Dutch hint makes the boundaries explicit: From 0 includes midnight 00:00; To 23 includes 23:00 and 23:30, ending at the next midnight.
+
+The POST handler `app/settings_routes.py::update_settings` converts submitted inclusive values back into the existing exclusive storage (`day_end + 1`, `print_end + 1`) before calling `save_preferences` and existing range validation. Crucially: **do not convert values in `calendar_week`, `load_preferences`, or the client time-line**; all consume exclusive end boundaries as before. A stored end 23 is presented as To 22 and renders slots through 22:30, preserving prior settings. A selected To 23 is stored as 24 and renders through 23:30. From 0 To 0 stores [0,1) and renders 00:00/00:30. Existing DB remains schema v6, no migration, no GitHub Actions. Week modal and no-JS standalone fallback both use the shared partial.
+
+Regression tests in `tests/test_calendar_preferences.py` verify old-setting round trips, saved exclusive boundaries, both To=0 and To=23, 48-slot full-day print, invalid ranges returning HTTP 422 without saving, and parity between screen and print. Before releasing, run local pytest and check the browser's settings gear / print view.

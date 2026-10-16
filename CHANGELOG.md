@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.2.14 — 2026-10-16
+
+- Changed Calendar Settings “To” hours to inclusive for both screen and print, with English/Dutch guidance.
+- Added support for From 0 / To 0 (midnight hour) and From 0 / To 23 (whole day through 23:30).
+- Preserved internal exclusive end boundaries and all existing saved hour settings; no database migration.
+- Added regression tests for round-trip values, full-day printing, and invalid ranges. No GitHub Actions.
+
+
 ## v0.2.13 — 2026-10-16
 
 - Added a visible moon/sun toggle in the header, including the login screen, for user-controlled dark/light mode.

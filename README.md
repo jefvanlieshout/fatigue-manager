@@ -2,7 +2,7 @@
 
 A small, private, mobile-first activity and energy diary (English by default, with Dutch selectable). Designed for people who want to learn what uses or restores their energy, without overwhelming app features.
 
-## Current release: v0.2.13 — manual night mode
+## Current release: v0.2.14 — inclusive calendar-hour settings
 
 - Activity name, starting energy (0–100), ending energy (0–100).
 - Immediate energy-change feedback.
@@ -214,3 +214,12 @@ The light/dark switch appears on the login page and every authenticated page, in
 The **Print Week** page deliberately retains its separate light A4 stylesheet to avoid printing dark backgrounds or consuming extra ink. The dark preference applies only to the website. A small external, self-hosted `app/static/theme.js` runs before the main stylesheet to avoid flashing a bright page when reloading at night, and updates the phone browser's theme-color metadata. CSP remains `script-src 'self'`, with no inline scripts, trackers, external assets, network calls, or GitHub Actions.
 
 No database migration: SQLite remains **v6**. Update manually with `cd /opt/fatigue-manager && bash scripts/update.sh`, refresh the browser and test switching modes on desktop and mobile, reloading the page, logging out/in, and Print Week.
+
+
+## v0.2.14 — Calendar and print hour ranges include the selected To hour
+
+The Calendar Settings dialog and its standalone fallback now show **From (hour)** and **To (hour, inclusive)** for both on-screen and printed calendars. The To input accepts **0–23**, like From. Examples: **From 0, To 0** shows 00:00 and 00:30; **From 0, To 23** shows all 48 half-hour slots through 23:30 (ending at midnight); **From 6, To 22** includes 22:00 and 22:30. No 24:00 row is added, since 24:00 is the following day's midnight boundary.
+
+Internally, the stored `day_end` and `print_end` remain *exclusive* so existing calendars, current-time display, and A4 print row sizing continue working. The form displays each saved end as `end - 1` and adds 1 on save. **Existing settings are preserved without reinterpreting their saved hours**, and invalid ranges still return HTTP 422.
+
+No database migration, no print or screen layout changes, no GitHub Actions. Run `cd /opt/fatigue-manager && bash scripts/update.sh` and verify midnight and end-of-day selections in both Week Planner and Print Week.
