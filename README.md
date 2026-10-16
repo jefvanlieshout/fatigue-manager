@@ -2,7 +2,7 @@
 
 A small, private, mobile-first activity and energy diary (English by default, with Dutch selectable). Designed for people who want to learn what uses or restores their energy, without overwhelming app features.
 
-## Current release: v0.2.11 — reference activity library and cleaner calendar printing
+## Current release: v0.2.12 — larger activity typography on A4 printouts
 
 - Activity name, starting energy (0–100), ending energy (0–100).
 - Immediate energy-change feedback.
@@ -197,3 +197,10 @@ The SQLite migration **v5→v6** adds `entries.calendar_visible`, separating ref
 UI cleanup: removed the Planned/Completed legend and mobile sideways-swiping instruction. Moved each calendar event's name and time toward the top to avoid the last line clipping. The **A4 printed week** no longer repeats the “Weekly planner” title/date banner (each weekday already shows its own date), and the weekday/remaining-energy header has been reduced to 10mm. The 200mm remainder is used for the time grid, still one A4 landscape page with zero requested CSS margins.
 
 This is a **database migration**, so save and verify an external copy of SQLite before running `bash scripts/update.sh` in the Fatigue Manager LXC. Expect SQLite `PRAGMA user_version` = **6** after restart. New code must not be rolled back onto the v6 database without also restoring the corresponding previous backup. Manual local pytest and browser/print checks are required. GitHub Actions remain disabled.
+
+
+## v0.2.12 — More readable printed activity text
+
+Only the dedicated A4 landscape print stylesheet changed: **activity names grow from 5.5 pt to 7.5 pt**, and **activity times grow from 4.6 pt to 6 pt**. Internal padding and line spacing were tightened slightly so both lines fit comfortably in short (30-minute) entries. For single-slot entries, long activity names are limited to one line with an ellipsis to leave room for the time; longer appointments retain wrapping. The interactive Week Planner typography and sizing in `style.css` are not changed.
+
+The print CSS link now uses `?v=0.2.12` to avoid cached styles. Print hours and A4 page dimensions remain unchanged. No database migration, new dependencies or GitHub Actions. Run `bash scripts/update.sh` in the existing LXC, open **Print Week** and inspect print preview at A4 landscape, 100% scale. Try a short 30-minute event as well as a longer event; browser/printer rendering can vary.

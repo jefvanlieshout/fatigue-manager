@@ -16,9 +16,12 @@ body{margin:0;background:#e9eeeb}
 .print-grid tbody td{position:relative;vertical-align:top}
 .print-grid .print-hour th,.print-grid .print-hour td{border-top:.2mm solid #b2c7b9}
 .print-event{position:absolute;top:0;left:0;background:#e9efec;border-left:.7mm solid #8e9f98;overflow:hidden;
-  padding:.14mm .4mm;font-size:5.5pt;line-height:1.08;z-index:2}
-.print-event strong{display:block;overflow-wrap:anywhere}
-.print-event small{display:block;margin-top:.15mm;font-size:4.6pt;line-height:1.05;color:#415446}
+  padding:.08mm .35mm;font-size:7.5pt;line-height:1.07;z-index:2}
+.print-event strong{display:block;overflow-wrap:anywhere;font-size:7.5pt;line-height:1.07}
+.print-event small{display:block;margin-top:.05mm;font-size:6pt;line-height:1.05;color:#415446}
+/* Short 30-minute entries prioritize one readable name and time line.
+   Longer events retain wrapping for full activity names. */
+.print-event[data-span="1"] strong{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .print-planned{border-left-style:dashed}
 @page{size:A4 landscape;margin:0}
 @media print{
@@ -39,3 +42,5 @@ body{margin:0;background:#e9eeeb}
 .print-energy-deficit{color:#b83440}
 
 /* v0.2.11: weekday/energy header 10mm; the timetable gets full remaining 200mm. */
+
+/* v0.2.12: print-only larger event typography; screen calendar is unchanged. */

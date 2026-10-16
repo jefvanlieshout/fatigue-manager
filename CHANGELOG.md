@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.2.12 — 2026-10-16
+
+- Increased printed calendar activity-name font from 5.5 to 7.5 pt and time from 4.6 to 6 pt.
+- Tightened event padding/line spacing; keep 30-minute event times legible and let longer event names wrap.
+- Kept the on-screen Week Planner unchanged; added print-only CSS tests and bumped print stylesheet cache key.
+- No database migration or GitHub Actions.
+
+
 ## v0.2.11 — 2026-10-16
 
 - Changed Add Activity to a historical reference/index: samples are saved and used for estimates, but not displayed or counted as actual calendar events.

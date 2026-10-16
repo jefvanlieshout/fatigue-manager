@@ -1,6 +1,6 @@
 # Fatigue Manager — Handover
 
-Updated: 2026-10-16 — v0.2.11 reference samples and print/layout refinements.
+Updated: 2026-10-16 — v0.2.12 print-only activity font enlargement.
 
 ## Background and core requirement
 
@@ -236,3 +236,12 @@ User and mother clarified: **Add Activity is an energy reference/index input**. 
 - Browser asset versions bumped to 0.2.11; no GitHub Actions or new LXC.
 - Updated regression tests and new `tests/test_reference_samples.py` verify reference not printed/plotted/counting, planner actual visible and counted, v5 migration/backfill and idempotency, and removal of clutter.
 - Deployment: **back up SQLite to off-LXC storage first**; run `cd /opt/fatigue-manager && bash scripts/update.sh`, then run pytest locally and check a reference sample, planned/recorded calendar entry, and A4 print. `PRAGMA user_version` should report 6. For rollback restore both matching code and v5 DB backup.
+
+
+## v0.2.12 — Print-only larger name and time fonts (2026-10-16)
+
+User and mother wanted to use the spare vertical space in printed events for more readable text, **without** changing the interactive calendar. This update modifies ONLY `app/static/print.css` typography and its versioned link in `app/templates/planner/print.html`. Activity name: **5.5pt → 7.5pt**. Activity time: **4.6pt → 6pt**. Tighten event padding from `.14mm .4mm` to `.08mm .35mm`; reduce time's top margin from `.15mm` to `.05mm`. One-slot/30-minute event names use one line with text-overflow ellipsis to prioritize keeping the time legible; multi-slot names can wrap. Keep print-page size 297×210mm, header 10mm, 200mm timetable, existing print-hour configuration and energy totals. No edits to `app/static/style.css` or other interactive Week Planner styles.
+- New assertions in `tests/test_calendar_preferences.py` check print font sizes, padding, asset cache version, and that the screen-specific stylesheet is independent.
+- Print CSS URL changed to `?v=0.2.12`; print JS unchanged.
+- No database schema update (still v6), no new LXC/services, no GitHub Actions or account changes.
+- Deploy manually using the established LXC update script. Verify output in actual A4 landscape print preview, especially one-slot entries, overlap lanes and long names. Browser PDF/physical printer rendering has not been confirmed by the assistant.

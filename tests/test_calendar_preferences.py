@@ -214,7 +214,7 @@ def test_print_week_shows_same_daily_remaining_energy_as_calendar(tmp_path):
         assert 'class="print-title"' not in printed.text
         assert 'data-count="30"' in printed.text
         assert 'class="remaining-unknown"' not in printed.text
-        assert "/static/print.css?v=0.2.11" in printed.text
+        assert "/static/print.css?v=0.2.12" in printed.text
         assert "/static/print.js?v=0.2.11" in printed.text
         screen = client.get("/planner/week?week=2026-10-14").text
         assert 'class="remaining-value">≈45</span>' in screen
@@ -236,3 +236,20 @@ def test_print_energy_summary_keeps_a4_full_bleed_dimensions():
     assert "const rowMm = 200 / count;" in js
     assert 'class="print-energy-remaining' in template
     assert "d.projection.is_estimate" in template
+
+
+def test_print_only_activity_fonts_are_larger():
+    """The A4 print style grows, not the interactive Week Planner style."""
+    from pathlib import Path
+    root = Path(__file__).resolve().parents[1] / "app"
+    print_css = (root / "static/print.css").read_text()
+    web_css = (root / "static/style.css").read_text()
+    print_template = (root / "templates/planner/print.html").read_text()
+    assert "font-size:7.5pt" in print_css
+    assert "margin-top:.05mm;font-size:6pt" in print_css
+    assert ".print-event[data-span=\"1\"] strong" in print_css
+    assert "padding:.08mm .35mm" in print_css
+    assert 'print.css?v=0.2.12' in print_template
+    # Normal screen calendar keeps its existing independent styling.
+    assert ".calendar-event-positioned" in web_css
+    assert "font-size:.72rem" in web_css
