@@ -4,7 +4,7 @@ from fastapi import APIRouter, Form, Request
 from fastapi.responses import RedirectResponse
 from .main import check_csrf, require_login, csrf, templates, parsed_day
 from .preferences import load_preferences, save_preferences, energy_class
-from .planner import week_data, calendar_week
+from .planner import week_data, calendar_week, daily_energy_projection
 
 router = APIRouter()
 
@@ -45,6 +45,11 @@ def print_week(request: Request, week: str | None = None):
         return response
     prefs = load_preferences()
     monday, days = week_data(parsed_day(week))
+    # Use exactly the same whole-day outlook as the interactive planner.
+    # Calculate BEFORE restricting the printed hour range so activities
+    # outside the print window still contribute to the daily total.
+    for day in days:
+        day["projection"] = daily_energy_projection(day)
     slots, days = calendar_week(days, prefs["print_start"], prefs["print_end"])
     for day in days:
         for events in day["slots"].values():

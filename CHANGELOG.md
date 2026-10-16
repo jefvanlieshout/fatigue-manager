@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.2.10 — 2026-10-16
+
+- Added each day's remaining-energy value beneath its name/date on the printed weekly planner.
+- Reused the on-screen forecast logic, including unknown costs, estimates, unsaved morning values, and negative balances.
+- Ensured whole-day totals include activities outside configured print hours.
+- Resized A4 header and rows to keep a full landscape page without CSS margins.
+- Updated print asset cache keys and regression tests. No database migration or GitHub Actions.
+
+
 ## v0.2.9 — 2026-10-15
 
 - Removed the small '?' warning badge for calendar events without energy readings.

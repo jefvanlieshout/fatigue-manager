@@ -1,6 +1,6 @@
 # Fatigue Manager — Handover
 
-Updated: 2026-10-15 — v0.2.9 calendar-only activities without warning badge.
+Updated: 2026-10-16 — v0.2.10 printed remaining energy.
 
 ## Background and core requirement
 
@@ -208,3 +208,16 @@ Verification: deploy via existing manual update script after backup, run local p
 ## v0.2.9 — Remove unknown-energy warning badge (2026-10-15)
 
 The user and their mother also use Fatigue Manager as an ordinary calendar, so not every planned item needs an energy reading. Remove the small '?' unknown-energy badge beneath each weekday. `app/templates/planner/week.html` no longer renders `remaining-unknown`; redundant CSS removed. `daily_energy_projection` still omits unknown costs and marks the resulting number with ≈ when estimated/incomplete, rather than assuming unknown cost equals zero. Test expectations adjusted to assert no '?' badge and a correct approximately-marked remaining value. Asset cache version bumped to 0.2.9. No DB or recurrence changes. Run `bash scripts/update.sh` inside the existing LXC and local pytest; no GitHub Actions.
+
+
+## v0.2.10 — Remaining-energy forecast in A4 print headers (2026-10-16)
+
+User and mother requested printing the total energy left **below each weekday name**, matching the Week Planner screen.
+
+- `app/settings_routes.py::print_week` computes `daily_energy_projection(day)` from `app/planner.py` for all seven days **before** calling `calendar_week(days, print_start, print_end)`. This ensures actual diary energy deltas and scheduled/planned deltas outside the printed hour range still count, using the EXACT same logic as the interactive planner; completed plans are not double-counted.
+- `app/templates/planner/print.html` adds an unobtrusive `print-energy-remaining` line beneath each weekday date. Shows `≈` on estimated/incomplete totals, `— left` when morning energy has not been saved, and retains negative totals with `print-energy-deficit` styling. No question badge for ordinary calendar events without energy readings.
+- `app/static/print.css`: header increased from 11 to 17mm; font and spacing tuned. `print.js` uses 181mm of grid rows instead of 187mm to preserve 12+17+181=210mm A4 landscape height; `@page margin:0` remains.
+- Bumped print CSS/JS asset versions to 0.2.10; updated `tests/test_calendar_preferences.py` to verify seven printed totals, a mixed day with events outside the printing range, unknown-cost appointment, negative total, unset day, parity with screen, and layout constants.
+- **No schema, security, account, recurrence or GitHub Actions changes**. Requires normal manual update in Fatigue Manager LXC; the assistant has not deployed or executed live browser/print tests.
+
+Run the Python suite locally and smoke-test printing at A4 landscape (100% scale; physical printer borderless support varies).

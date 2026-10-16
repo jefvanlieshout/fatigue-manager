@@ -11,7 +11,7 @@ body{margin:0;background:#e9eeeb}
 .print-grid .time-col{width:12mm}
 .print-grid col:not(.time-col){width:calc(285mm / 7)}
 .print-grid th,.print-grid td{border-right:.15mm solid #c8d4cc;border-bottom:.12mm solid #d6e1da;padding:0;box-sizing:border-box}
-.print-grid thead th{height:11mm;background:#edf4ee;font-size:8pt;text-align:center}
+.print-grid thead th{height:17mm;max-height:17mm;background:#edf4ee;font-size:8pt;text-align:center;vertical-align:middle;line-height:1.12;padding:1mm .3mm}
 .print-grid thead th small{display:block;font-weight:400;font-size:6pt}
 .print-grid tbody tr{height:var(--row-height);max-height:var(--row-height)}
 .print-grid tbody th{font-size:6.5pt;font-weight:400;vertical-align:top;padding:.5mm 1mm;color:#526e5b;background:#f9faf9;line-height:1}
@@ -31,3 +31,11 @@ body{margin:0;background:#e9eeeb}
     -webkit-print-color-adjust:exact;print-color-adjust:exact;
   }
 }
+
+/* v0.3.0: readable remaining-energy summary directly under each day. */
+.print-day-name,.print-day-date,.print-energy-remaining{display:block}
+.print-day-name{font-size:7.7pt;font-weight:700}
+.print-day-date{font-weight:400;font-size:6pt;margin-top:.25mm}
+.print-energy-remaining{font-weight:750;font-size:7.5pt;color:#24724a;margin-top:.7mm;
+  white-space:nowrap;font-variant-numeric:tabular-nums}
+.print-energy-deficit{color:#b83440}

@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{{ t('print_week') }} · {{ monday }}</title>
-<link rel="stylesheet" href="/static/print.css?v=0.2.5">
-<script src="/static/print.js?v=0.2.5" defer></script>
+<link rel="stylesheet" href="/static/print.css?v=0.2.10">
+<script src="/static/print.js?v=0.2.10" defer></script>
 </head>
 <body>
 <div class="print-controls">
@@ -25,7 +25,14 @@
     <thead>
       <tr><th>{{ t('calendar_time') }}</th>
       {% for d in days %}
-        <th>{{ t('days')[d.weekday] }}<small>{{ d.date[8:] }}/{{ d.date[5:7] }}</small></th>
+        <th>
+          <span class="print-day-name">{{ t('days')[d.weekday] }}</span>
+          <small class="print-day-date">{{ d.date[8:] }}/{{ d.date[5:7] }}</small>
+          <span class="print-energy-remaining{% if d.projection.remaining is not none and d.projection.remaining < 0 %} print-energy-deficit{% endif %}"
+                title="{{ t('remaining_explainer') }}">
+            {% if d.projection.remaining is not none %}{{ '≈' if d.projection.is_estimate else '' }}{{ '%g'|format(d.projection.remaining) }} {{ t('energy_left') }}{% else %}— {{ t('energy_left') }}{% endif %}
+          </span>
+        </th>
       {% endfor %}
       </tr>
     </thead>

@@ -162,3 +162,75 @@ def test_settings_get_requires_login(tmp_path):
         response = client.get("/planner/settings?week=2026-10-14", follow_redirects=False)
         assert response.status_code == 303
         assert response.headers["location"] == "/login"
+
+
+def test_print_week_shows_same_daily_remaining_energy_as_calendar(tmp_path):
+    """A4 header includes the whole-day forecast, even outside print hours."""
+    client, token = login(tmp_path)
+    try:
+        # Wednesday: starting 80, actual breakfast -10 outside 07:00 print
+        # window, planned walk -25, and a calendar-only appointment with
+        # unknown energy. The final estimate should be 45, NOT 55 or 20.
+        saved = client.post("/planner/energy", data={
+            "token": token, "day": "2026-10-14",
+            "starting_energy": "80", "view": "week",
+        }, follow_redirects=False)
+        assert saved.status_code == 303
+        recorded = client.post("/entries", data={
+            "token": token, "activity_name": "Early breakfast",
+            "energy_before": "80", "energy_after": "70",
+            "occurred_at": "2026-10-14T06:30",
+        }, follow_redirects=False)
+        assert recorded.status_code == 303
+        for activity, delta in (("Walk", "-25"), ("Appointment", "")):
+            planned = client.post("/planner/calendar-event", data={
+                "token": token, "day": "2026-10-14",
+                "activity_name": activity, "planned_time": "10:00",
+                "end_time": "11:00", "mode": "planned",
+                "expected_delta": delta,
+            }, follow_redirects=False)
+            assert planned.status_code == 303
+
+        # Thursday is overbooked; Monday has no saved morning score.
+        client.post("/planner/energy", data={
+            "token": token, "day": "2026-10-15",
+            "starting_energy": "15", "view": "week",
+        }, follow_redirects=False)
+        client.post("/planner/calendar-event", data={
+            "token": token, "day": "2026-10-15",
+            "activity_name": "Cleaning", "planned_time": "13:00",
+            "end_time": "14:00", "mode": "planned", "expected_delta": "-25",
+        }, follow_redirects=False)
+
+        printed = client.get("/planner/print?week=2026-10-14")
+        assert printed.status_code == 200
+        assert printed.text.count('class="print-energy-remaining') == 7
+        # The print and screen use the same daily_energy_projection values.
+        assert "≈45 left" in printed.text
+        assert "≈-10 left" in printed.text
+        assert "— left" in printed.text
+        assert "print-energy-deficit" in printed.text
+        assert 'data-count="30"' in printed.text
+        assert 'class="remaining-unknown"' not in printed.text
+        assert "/static/print.css?v=0.2.10" in printed.text
+        assert "/static/print.js?v=0.2.10" in printed.text
+        screen = client.get("/planner/week?week=2026-10-14").text
+        assert 'class="remaining-value">≈45</span>' in screen
+    finally:
+        client.__exit__(None, None, None)
+
+
+def test_print_energy_summary_keeps_a4_full_bleed_dimensions():
+    from pathlib import Path
+    base = Path(__file__).resolve().parents[1] / "app" / "static"
+    css = (base / "print.css").read_text()
+    js = (base / "print.js").read_text()
+    template = (
+        Path(__file__).resolve().parents[1] / "app" / "templates"
+        / "planner" / "print.html"
+    ).read_text()
+    assert "@page{size:A4 landscape;margin:0}" in css
+    assert "height:17mm" in css
+    assert "const rowMm = 181 / count;" in js
+    assert 'class="print-energy-remaining' in template
+    assert "d.projection.is_estimate" in template

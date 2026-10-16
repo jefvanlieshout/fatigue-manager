@@ -2,7 +2,7 @@
 
 A small, private, mobile-first activity and energy diary (English by default, with Dutch selectable). Designed for people who want to learn what uses or restores their energy, without overwhelming app features.
 
-## Current release: v0.2.9 — optional-energy calendar items
+## Current release: v0.2.10 — printable remaining-energy summaries
 
 - Activity name, starting energy (0–100), ending energy (0–100).
 - Immediate energy-change feedback.
@@ -177,3 +177,12 @@ No database migration; schema remains **v5**. Reuse existing LXC/SQLite and manu
 ## v0.2.9 — Calendar items without energy readings
 
 An activity may be added solely for scheduling. The small `?` badge next to remaining energy has been removed. Activities without a known energy difference remain on the calendar normally and continue to be omitted from energy arithmetic; the remaining value uses `≈` when it is incomplete or estimated. The battery controls, activity editor and the rest of the week view are unchanged. No database migration, GitHub Actions or new dependencies.
+
+
+## v0.2.10 — Remaining energy on printed weekly calendar
+
+The **Print Week** page now displays the same estimated energy remaining beneath each weekday name and date as the interactive Week Planner. Values use the shared `daily_energy_projection` calculation, not a second independent formula: saved starting energy plus real energy changes for completed activities, plus estimates for unfinished plans. Unknown-cost calendar appointments are simply ignored in the arithmetic; an `≈` prefix indicates the result involves estimates or incomplete data. If no starting energy was saved, the printed value is `— left`, not a fabricated 0. Negative remaining totals are shown and highlighted.
+
+The calculation runs **before filtering by print hours**, so activities outside the printable 07:00–22:00 window still affect the whole-day total. A4 landscape stays full-bleed with zero requested margins; to fit the extra header line, header height increases from 11mm to 17mm and the body grid decreases by 6mm, totaling the same 297 × 210mm page. Screen week, database, and recurring activities are unchanged.
+
+No database migration. `bash scripts/update.sh` remains the manual deployment method. Print assets use `?v=0.2.10` to avoid old cached styles/scripts. Run local tests and check your browser/printer A4 preview; some physical printers require margins despite zero-margin CSS. No GitHub Actions.

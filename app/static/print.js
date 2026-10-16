@@ -2,7 +2,7 @@
 document.addEventListener("DOMContentLoaded", () => {
   const page = document.getElementById("print-page");
   const count = Number(page.dataset.count) || 30;
-  const rowMm = 187 / count; // 12mm title + 11mm header + 187mm grid = full 210mm
+  const rowMm = 181 / count; // 12mm title + 17mm header + 181mm grid = full 210mm
   page.style.setProperty("--row-height", rowMm + "mm");
   const palette = {
     "energy-low": page.dataset.lowColor, "energy-medium": page.dataset.mediumColor,
