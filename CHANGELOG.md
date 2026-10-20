@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.2.17 — 2026-10-20
+
+- Removed the bottom-of-page energy disclaimer from the Week Planner and the shared tagline footer from the website to reclaim vertical space.
+- No change to diary records, forecasting, printing, or database. No migration or GitHub Actions.
+
+
 ## v0.2.16 — 2026-10-20
 
 - Starting-energy saves now apply from the selected day through Sunday, automatically filling the remaining week.

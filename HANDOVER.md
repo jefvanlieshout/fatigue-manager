@@ -1,6 +1,6 @@
 # Fatigue Manager — Handover
 
-Updated: 2026-10-20 — v0.2.16 rolling starting energy in weekly planner.
+Updated: 2026-10-20 — v0.2.17 remove unnecessary bottom-of-page text.
 
 ## Background and core requirement
 
@@ -293,3 +293,7 @@ User feedback from the real-world Fatigue Manager planner: when entering Monday'
 - Database remains schema **v6**. No schema migration, no dependency changes, no backup required solely for code changes, no GitHub Actions. User preference: rapid GitHub push → LXC pull → test in real environment with minimal upfront ceremony. Static review only; local `pytest` not executed by assistant.
 
 Deploy via `cd /opt/fatigue-manager && bash scripts/update.sh`. To check: enter 80 on Monday in the weekly calendar; see all seven inputs change to 80. Enter 60 on Tuesday; Monday stays 80, Tuesday through Sunday become 60. The print page should reflect the different baselines.
+
+## v0.2.17 — Remove redundant page-bottom text (2026-10-20)
+
+User requested more screen space by removing “Energy scores are personal ratings, not a precise battery. These are personal observations, not predictions or medical advice.” beneath the Week Planner, and “Your energy, at your own pace.” from the website footer. Removed the `planner-note` paragraph in `app/templates/planner/week.html` and the common `footer` in `app/templates/base.html`. The Insights page's inline context stays in place; localized translation catalog remains intact. No database changes, dependencies, actions, browser script changes, or schema migration. Rapid-deploy via `cd /opt/fatigue-manager && bash scripts/update.sh`. Verify extra space at the bottom of the Week Planner and on other pages.
