@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.2.18 — 2026-10-20
+
+- Restored about two lines (2rem) of empty breathing room beneath the weekly calendar, without restoring the removed footer text.
+- Made the compact mobile calendar a little shorter so its bottom spacing is visible on screen.
+- CSS-only change, no data or database changes.
+
+
 ## v0.2.17 — 2026-10-20
 
 - Removed the bottom-of-page energy disclaimer from the Week Planner and the shared tagline footer from the website to reclaim vertical space.

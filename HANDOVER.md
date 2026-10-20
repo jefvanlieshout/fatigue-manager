@@ -1,6 +1,6 @@
 # Fatigue Manager — Handover
 
-Updated: 2026-10-20 — v0.2.17 remove unnecessary bottom-of-page text.
+Updated: 2026-10-20 — v0.2.18 Week Planner bottom spacing.
 
 ## Background and core requirement
 
@@ -297,3 +297,7 @@ Deploy via `cd /opt/fatigue-manager && bash scripts/update.sh`. To check: enter 
 ## v0.2.17 — Remove redundant page-bottom text (2026-10-20)
 
 User requested more screen space by removing “Energy scores are personal ratings, not a precise battery. These are personal observations, not predictions or medical advice.” beneath the Week Planner, and “Your energy, at your own pace.” from the website footer. Removed the `planner-note` paragraph in `app/templates/planner/week.html` and the common `footer` in `app/templates/base.html`. The Insights page's inline context stays in place; localized translation catalog remains intact. No database changes, dependencies, actions, browser script changes, or schema migration. Rapid-deploy via `cd /opt/fatigue-manager && bash scripts/update.sh`. Verify extra space at the bottom of the Week Planner and on other pages.
+
+## v0.2.18 — Week Planner bottom breathing room (2026-10-20)
+
+Following v0.2.17's removal of the footer and disclaimer, the bottom edge of the week calendar felt too close to the edge of the page. Add a simple 2rem bottom margin on `.shell.wide .calendar-scroll` in `app/static/style.css`, and shorten its mobile viewport-based height by the same amount (including small <380px screens) so the space remains visible without requiring a page scroll. No old text is restored. `app/templates/base.html` increments CSS cache-buster to v0.2.18. No layout changes for printing, database, or other pages. Deploy by `cd /opt/fatigue-manager && bash scripts/update.sh`.

@@ -612,3 +612,13 @@ html[data-theme="dark"] .activity-suggest-panel,
 html[data-theme="dark"] .activity-suggest-option{background:#213637;color:var(--ink)}
 html[data-theme="dark"] .activity-suggest-option:hover{background:#35544a}
 html[data-theme="dark"] .calendar-now-marker{background:#ff6778}
+
+/* v0.2.18: two lines of air below the week calendar, without a footer. */
+.shell.wide .calendar-scroll{margin-bottom:2rem}
+@media(max-width:750px){
+  /* Keep the breathing room visible on mobile rather than extending the viewport. */
+  .shell.wide .calendar-scroll{height:calc(100dvh - 152px - 2rem)}
+}
+@media(max-width:380px){
+  .shell.wide .calendar-scroll{height:calc(100dvh - 168px - 2rem)}
+}
