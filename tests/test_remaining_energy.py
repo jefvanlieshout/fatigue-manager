@@ -131,3 +131,82 @@ def test_picker_does_not_reopen_after_selecting_name():
     assert "position:absolute;z-index:60" in css
     assert 'type="button" role="option"' in week
     assert 'aria-autocomplete="list"' in week
+
+
+def test_morning_energy_rolls_forward_only_within_its_week(tmp_path):
+    """Monday seeds seven days; Tuesday changes six, preserving Monday."""
+    client, token = test_client(tmp_path)
+    try:
+        def save(day, value, view="week"):
+            return client.post("/planner/energy", data={
+                "token": token, "day": day, "starting_energy": str(value),
+                "view": view,
+            }, follow_redirects=False)
+
+        # A different week must never be affected.
+        assert save("2026-10-11", 55).status_code == 303  # Sunday
+        monday = save("2026-10-12", 80)
+        assert monday.status_code == 303
+        assert monday.headers["location"] == "/planner/week?week=2026-10-12"
+        _, days = week_data(date(2026, 10, 12))
+        assert [d["energy"] for d in days] == [80] * 7
+
+        # Tuesday's new reading changes only Tuesday through Sunday.
+        assert save("2026-10-13", 60).status_code == 303
+        _, days = week_data(date(2026, 10, 12))
+        assert [d["energy"] for d in days] == [80] + [60] * 6
+
+        # The daily outlook and printed calendar use these same values.
+        html = client.get("/planner/week?week=2026-10-12").text
+        assert 'id="energy-2026-10-12"' in html
+        assert 'value="80"' in html
+        assert 'id="energy-2026-10-13"' in html
+        assert 'value="60"' in html
+        printed = client.get("/planner/print?week=2026-10-12").text
+        assert "80 left" in printed
+        assert "60 left" in printed
+        assert "Saving this value also updates" in html
+        assert "Saving this value also updates" in client.get(
+            "/planner/day?day=2026-10-13"
+        ).text
+
+        # A Sunday change updates just Sunday; previous and next weeks stay put.
+        assert save("2026-10-18", 35).status_code == 303
+        _, days = week_data(date(2026, 10, 12))
+        assert [d["energy"] for d in days] == [80] + [60] * 5 + [35]
+        with main.connect() as db:
+            assert db.execute(
+                "SELECT starting_energy FROM daily_energy WHERE day='2026-10-11'"
+            ).fetchone()[0] == 55
+            assert db.execute(
+                "SELECT COUNT(*) FROM daily_energy WHERE day >= '2026-10-19'"
+            ).fetchone()[0] == 0
+    finally:
+        client.__exit__(None, None, None)
+
+
+def test_clearing_energy_clears_remaining_week_not_previous_days(tmp_path):
+    client, token = test_client(tmp_path)
+    try:
+        def save(day, value):
+            return client.post("/planner/energy", data={
+                "token": token, "day": day, "starting_energy": value,
+            }, follow_redirects=False)
+
+        assert save("2026-10-12", "72").status_code == 303
+        assert save("2026-10-13", "").status_code == 303
+        _, days = week_data(date(2026, 10, 12))
+        assert [d["energy"] for d in days] == [72] + [None] * 6
+
+        # Wrong readings are rejected without altering any saved day.
+        for bad in ("-1", "101", "banana"):
+            assert save("2026-10-14", bad).status_code == 422
+            _, days = week_data(date(2026, 10, 12))
+            assert [d["energy"] for d in days] == [72] + [None] * 6
+
+        # The Day Overview uses the same shared save route.
+        assert save("2026-10-14", "0").status_code == 303
+        _, days = week_data(date(2026, 10, 12))
+        assert [d["energy"] for d in days] == [72, None] + [0] * 5
+    finally:
+        client.__exit__(None, None, None)

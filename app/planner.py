@@ -425,21 +425,34 @@ def save_energy(
     check_csrf(request, token)
     selected = parsed_day(day)
     level = starting_energy.strip()
+    # Each morning's reading is the planning baseline for this day and the
+    # remainder of its Monday–Sunday week. Previous days never change.
+    week_end = selected + timedelta(days=7 - selected.weekday())
+    if level:
+        try:
+            number = int(level)
+        except ValueError as exc:
+            raise HTTPException(422, "Energy must be between 0 and 100.") from exc
+        if not (0 <= number <= 100):
+            raise HTTPException(422, "Energy must be between 0 and 100.")
     with connect() as db:
-        if level == "":
-            db.execute("DELETE FROM daily_energy WHERE day=?", (selected.isoformat(),))
-        else:
-            try:
-                number = int(level)
-            except ValueError as exc:
-                raise HTTPException(422, "Energy must be between 0 and 100.") from exc
-            if not (0 <= number <= 100):
-                raise HTTPException(422, "Energy must be between 0 and 100.")
+        db.execute("BEGIN IMMEDIATE")
+        if not level:
+            # Clearing an estimate also clears its later weekly forecasts.
             db.execute(
+                "DELETE FROM daily_energy WHERE day>=? AND day<?",
+                (selected.isoformat(), week_end.isoformat()),
+            )
+        else:
+            stamp = now_utc()
+            db.executemany(
                 "INSERT INTO daily_energy(day,starting_energy,updated_at) VALUES(?,?,?) "
                 "ON CONFLICT(day) DO UPDATE SET starting_energy=excluded.starting_energy, "
                 "updated_at=excluded.updated_at",
-                (selected.isoformat(), number, now_utc()),
+                [
+                    ((selected + timedelta(days=offset)).isoformat(), number, stamp)
+                    for offset in range(7 - selected.weekday())
+                ],
             )
     return RedirectResponse(destination(selected.isoformat(), view), status_code=303)
 

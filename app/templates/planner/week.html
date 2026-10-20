@@ -37,7 +37,8 @@
             <input id="energy-{{ d.date }}" name="starting_energy"
               type="number" min="0" max="100" step="1" inputmode="numeric" required
               value="{{ d.energy if d.energy is not none else 0 }}"
-              aria-label="{{ t('starting_energy') }} · {{ t('days')[d.weekday] }} {{ d.date }}">
+              aria-label="{{ t('starting_energy') }} · {{ t('days')[d.weekday] }} {{ d.date }}"
+              title="{{ t('energy_week_rollover_hint') }}">
             <button type="submit" class="visually-hidden" tabindex="-1">{{ t('save') }}</button>
           </form>
           <div class="daily-energy-remaining{% if d.projection.remaining is not none and d.projection.remaining < 0 %} energy-overbooked{% endif %}"

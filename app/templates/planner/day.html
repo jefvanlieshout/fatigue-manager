@@ -9,7 +9,7 @@
 </div>
 <section class="panel">
   <div class="panel-heading"><h2>{{ t('starting_energy') }}</h2></div>
-  <p class="subtle">{{ t('day_energy_hint') }}</p>
+  <p class="subtle">{{ t('day_energy_hint') }} {{ t('energy_week_rollover_hint') }}</p>
   <form method="post" action="/planner/energy">
     <input type="hidden" name="token" value="{{ csrf }}">
     <input type="hidden" name="day" value="{{ day }}">

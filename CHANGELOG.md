@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.2.16 — 2026-10-20
+
+- Starting-energy saves now apply from the selected day through Sunday, automatically filling the remaining week.
+- A new morning reading on Tuesday or later updates only that day and the future days of the same week; earlier days stay unchanged.
+- Clearing a day clears its remaining-week estimates; completed activities and recorded energy changes remain untouched.
+- Added English/Dutch help text and two focused regression checks. No database migration or GitHub Actions.
+
+
 ## v0.2.15 — 2026-10-16
 
 - Added a 7mm white safety inset to printed A4 weeks, protecting weekday names, outer columns and bottom slots from the ~5mm unprintable border of ordinary printers.

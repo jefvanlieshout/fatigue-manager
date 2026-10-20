@@ -1,6 +1,6 @@
 # Fatigue Manager — Handover
 
-Updated: 2026-10-16 — v0.2.15 printer-safe A4 print layout.
+Updated: 2026-10-20 — v0.2.16 rolling starting energy in weekly planner.
 
 ## Background and core requirement
 
@@ -280,3 +280,16 @@ User found ~5mm printer nonprintable edges cutting off weekday names, side cells
 - `app/i18n.py`: English and Dutch on-screen print tips now say **A4 landscape, 100%, no browser margins, headers/footers off**. Avoid Fill Page; browser Fit to printable area only if needed on an unusual printer. Enable Background graphics for color coding.
 - Updated simple static tests for margins, row geometry, density, and print assets; also refreshed older regression assertions with stale CSS cache versions.
 - No database migration, activity changes, interactive calendar styling changes, external packages, live LXC updates, or GitHub Actions. Deploy with existing user-controlled `bash scripts/update.sh`. Confirm via the browser preview and one physical printer/PDF test; print capabilities vary by driver.
+
+
+## v0.2.16 — Rolling weekly morning-energy baseline (2026-10-20)
+
+User feedback from the real-world Fatigue Manager planner: when entering Monday's starting energy, repeat it through the rest of the same Monday–Sunday week; when entering a new reading on Tuesday, use that score for Tuesday–Sunday while preserving Monday and any earlier days. Do not carry over into a different week.
+
+- `app/planner.py::save_energy` (shared `POST /planner/energy` for Week Planner and Day Overview): compute exclusive week end as selected date plus `7 - selected.weekday()` days, then batch upsert starting energy for selected day through Sunday inside one SQLite `BEGIN IMMEDIATE` transaction. Future-day existing forecasts are intentionally replaced by the latest morning reading. If a value is cleared via Day Overview, delete only the selected and later days of that week; never touch earlier days. Reject out-of-range or nonnumeric values before database writes. Zero is a valid recorded score (distinct from blank).
+- `app/templates/planner/week.html` tooltip and `app/templates/planner/day.html` hint explain propagation; `app/i18n.py` has EN/NL strings. We deliberately avoid adding extra controls or visible clutter to the compact calendar header.
+- `week_data`, `daily_energy_projection`, and `/planner/print` already read per-day values, so screen forecasts and printed energy summaries update naturally after save; activity cost estimates and actual event records are unaffected.
+- Two lightweight checks added to `tests/test_remaining_energy.py`: Monday-to-Sunday propagation, Tuesday and Sunday overrides, no cross-week changes, blank clear, invalid values, and view/print reflection.
+- Database remains schema **v6**. No schema migration, no dependency changes, no backup required solely for code changes, no GitHub Actions. User preference: rapid GitHub push → LXC pull → test in real environment with minimal upfront ceremony. Static review only; local `pytest` not executed by assistant.
+
+Deploy via `cd /opt/fatigue-manager && bash scripts/update.sh`. To check: enter 80 on Monday in the weekly calendar; see all seven inputs change to 80. Enter 60 on Tuesday; Monday stays 80, Tuesday through Sunday become 60. The print page should reflect the different baselines.

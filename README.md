@@ -2,7 +2,7 @@
 
 A small, private, mobile-first activity and energy diary (English by default, with Dutch selectable). Designed for people who want to learn what uses or restores their energy, without overwhelming app features.
 
-## Current release: v0.2.15 — printer-safe A4 margins
+## Current release: v0.2.16 — rolling morning energy across the week
 
 - Activity name, starting energy (0–100), ending energy (0–100).
 - Immediate energy-change feedback.
@@ -234,3 +234,12 @@ The dedicated print layout now keeps a **7mm white safety margin on all four sid
 **Print settings:** A4; landscape; **100% scale / Actual size**; **Margins: None** (the page itself supplies the safe inset); **headers/footers disabled**; background graphics enabled if you want colored energy blocks. Do not use *Fill page* or borderless enlargement, which can trim content. *Fit to printable area* is a fallback if the printer clips even with the internal safe inset.
 
 No changes to the on-screen calendar, stored time ranges, database (schema v6), or GitHub Actions. Deploy by pulling the latest source via `cd /opt/fatigue-manager && bash scripts/update.sh`, then inspect one print preview / PDF or actual print.
+
+
+## v0.2.16 — Morning energy carries forward through Sunday
+
+The starting-energy field now updates **the selected day and every later day through Sunday**. Example: recording 80 on Monday makes Monday–Sunday use 80 as their starting-energy baseline. On Tuesday, recording 60 updates Tuesday–Sunday to 60 **without changing Monday's 80**. Sunday updates Sunday alone; no value spills into the next week. The existing daily remaining-energy projection and printed week update automatically from these saved values. Energy spent/restored by planned or completed activities is still calculated independently per day.
+
+The same behavior applies whether energy is saved from the Week Planner or Day Overview, including entering zero. Clearing a day on Day Overview removes that day and the remaining days of the week from the morning-energy forecast, without clearing earlier days or activity entries. Invalid values remain rejected (HTTP 422), and updates run in one SQLite transaction.
+
+A short English/Dutch hint explains the new behavior in Day Overview, with a tooltip on each weekly morning-energy input. No database schema migration, new settings, background tasks, or GitHub Actions. The workflow stays: push to GitHub, `cd /opt/fatigue-manager && bash scripts/update.sh` on the LXC, then test directly in the calendar.
